@@ -1,0 +1,205 @@
+"use client";
+
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { useLiveQuery } from "dexie-react-hooks";
+import { db, type Routine } from "@/lib/db";
+import { useExerciseMap } from "@/lib/hooks";
+import { createRoutine, updateRoutine, deleteRoutine } from "@/lib/routines";
+import { startWorkout, getActiveWorkout } from "@/lib/workout";
+import { confirmBuzz } from "@/lib/haptics";
+import PageHeader from "@/components/PageHeader";
+import Sheet from "@/components/Sheet";
+import ExercisePicker from "@/components/ExercisePicker";
+
+export default function RoutinesPage() {
+  const router = useRouter();
+  const routines = useLiveQuery(
+    () => db.routines.orderBy("createdAt").reverse().toArray(),
+    [],
+    undefined,
+  );
+  const exMap = useExerciseMap();
+  const [editing, setEditing] = useState<Routine | "new" | null>(null);
+
+  const start = async (r: Routine) => {
+    const active = await getActiveWorkout();
+    if (active && !confirm("Finish current session and start this plan?")) return;
+    confirmBuzz();
+    await startWorkout({
+      routineId: r.id,
+      routineName: r.name,
+      exerciseIds: r.exerciseIds,
+    });
+    router.push("/");
+  };
+
+  return (
+    <div>
+      <PageHeader
+        title="Plans"
+        right={
+          <button
+            onClick={() => setEditing("new")}
+            className="rounded-xl bg-accent px-3.5 py-2 text-sm font-extrabold uppercase tracking-wide text-black active:scale-95"
+          >
+            ＋ New
+          </button>
+        }
+      />
+
+      {!routines ? (
+        <div className="pt-16 text-center text-text-faint">Loading…</div>
+      ) : routines.length === 0 ? (
+        <div className="card mt-4 p-8 text-center text-text-faint">
+          No plans yet. Build a routine once, launch it in one tap.
+        </div>
+      ) : (
+        <div className="space-y-2.5">
+          {routines.map((r) => (
+            <div key={r.id} className="card p-4">
+              <div className="flex items-start justify-between">
+                <div className="min-w-0">
+                  <h3 className="text-lg font-extrabold tracking-tight">
+                    {r.name}
+                  </h3>
+                  <div className="label mt-0.5">
+                    {r.exerciseIds.length} exercises
+                  </div>
+                </div>
+                <button
+                  onClick={() => setEditing(r)}
+                  className="label rounded-lg border border-line px-2.5 py-1.5 text-text-dim active:border-accent active:text-accent"
+                >
+                  Edit
+                </button>
+              </div>
+              <div className="mt-2 flex flex-wrap gap-1.5">
+                {r.exerciseIds.slice(0, 6).map((id) => (
+                  <span
+                    key={id}
+                    className="rounded-md border border-line px-2 py-0.5 text-xs text-text-dim"
+                  >
+                    {exMap?.get(id)?.name ?? "?"}
+                  </span>
+                ))}
+                {r.exerciseIds.length > 6 && (
+                  <span className="text-xs text-text-faint">
+                    +{r.exerciseIds.length - 6}
+                  </span>
+                )}
+              </div>
+              <button
+                onClick={() => start(r)}
+                className="mt-3 w-full rounded-xl bg-accent py-3 text-center font-extrabold uppercase tracking-wide text-black active:scale-[0.99]"
+              >
+                Start
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {editing && (
+        <RoutineEditor
+          routine={editing === "new" ? null : editing}
+          onClose={() => setEditing(null)}
+        />
+      )}
+    </div>
+  );
+}
+
+function RoutineEditor({
+  routine,
+  onClose,
+}: {
+  routine: Routine | null;
+  onClose: () => void;
+}) {
+  const exMap = useExerciseMap();
+  const [name, setName] = useState(routine?.name ?? "");
+  const [ids, setIds] = useState<string[]>(routine?.exerciseIds ?? []);
+  const [pickerOpen, setPickerOpen] = useState(false);
+
+  const save = async () => {
+    if (ids.length === 0) return;
+    if (routine) await updateRoutine(routine.id, { name, exerciseIds: ids });
+    else await createRoutine(name, ids);
+    confirmBuzz();
+    onClose();
+  };
+
+  const remove = async () => {
+    if (!routine) return;
+    if (!confirm("Delete this plan?")) return;
+    await deleteRoutine(routine.id);
+    onClose();
+  };
+
+  return (
+    <Sheet open onClose={onClose} title={routine ? "Edit Plan" : "New Plan"}>
+      <input
+        value={name}
+        onChange={(e) => setName(e.target.value)}
+        placeholder="Plan name (e.g. Push Day)"
+        className="mb-3 w-full rounded-xl border border-line bg-bg px-4 py-3 text-base outline-none focus:border-accent placeholder:text-text-faint"
+      />
+
+      <div className="space-y-1.5">
+        {ids.map((id, i) => (
+          <div
+            key={id}
+            className="flex items-center gap-3 rounded-xl border border-line bg-bg px-3 py-2.5"
+          >
+            <span className="num w-5 text-sm text-text-faint">{i + 1}</span>
+            <span className="flex-1 font-semibold">
+              {exMap?.get(id)?.name ?? "?"}
+            </span>
+            <button
+              onClick={() => setIds((xs) => xs.filter((x) => x !== id))}
+              aria-label="remove"
+              className="text-text-faint active:text-danger"
+            >
+              <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round">
+                <path d="M18 6 6 18M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+        ))}
+      </div>
+
+      <button
+        onClick={() => setPickerOpen(true)}
+        className="mt-2 w-full rounded-xl border border-dashed border-line-bright py-3 font-semibold text-text-dim active:border-accent active:text-accent"
+      >
+        ＋ Add Exercise
+      </button>
+
+      <div className="mt-5 flex gap-2">
+        {routine && (
+          <button
+            onClick={remove}
+            className="rounded-xl border border-line px-4 py-3 font-semibold text-danger active:bg-danger/10"
+          >
+            Delete
+          </button>
+        )}
+        <button
+          onClick={save}
+          disabled={ids.length === 0}
+          className="flex-1 rounded-xl bg-accent py-3 font-extrabold uppercase tracking-wide text-black disabled:opacity-40 active:scale-[0.99]"
+        >
+          Save Plan
+        </button>
+      </div>
+
+      <ExercisePicker
+        open={pickerOpen}
+        onClose={() => setPickerOpen(false)}
+        onPick={(id) => setIds((xs) => (xs.includes(id) ? xs : [...xs, id]))}
+        excludeIds={ids}
+      />
+    </Sheet>
+  );
+}

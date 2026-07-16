@@ -1,26 +1,123 @@
 @import "tailwindcss";
 
+/* ===== LIFT — industrial readout theme ===== */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --bg: #0a0a0b;
+  --bg-grid: #141416;
+  --surface: #141416;
+  --surface-2: #1c1c1f;
+  --line: #2a2a2e;
+  --line-bright: #3a3a40;
+  --text: #f4f4f5;
+  --text-dim: #a1a1a6;
+  --text-faint: #6b6b72;
+  --accent: #ccff00;        /* electric lime */
+  --accent-dim: #9bc400;
+  --accent-glow: rgba(204, 255, 0, 0.15);
+  --danger: #ff4d4d;
+  --gold: #ffc048;
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-line: var(--line);
+  --color-line-bright: var(--line-bright);
+  --color-text: var(--text);
+  --color-text-dim: var(--text-dim);
+  --color-text-faint: var(--text-faint);
+  --color-accent: var(--accent);
+  --color-accent-dim: var(--accent-dim);
+  --color-danger: var(--danger);
+  --color-gold: var(--gold);
+  --font-display: var(--font-archivo);
+  --font-mono: var(--font-mono-num);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+* {
+  -webkit-tap-highlight-color: transparent;
+}
+
+html {
+  color-scheme: dark;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background-color: var(--bg);
+  /* faint machined grid texture */
+  background-image:
+    linear-gradient(var(--bg-grid) 1px, transparent 1px),
+    linear-gradient(90deg, var(--bg-grid) 1px, transparent 1px);
+  background-size: 44px 44px;
+  background-position: -1px -1px;
+  color: var(--text);
+  font-family: var(--font-archivo), system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  overscroll-behavior-y: none;
+}
+
+/* numbers readout */
+.num {
+  font-family: var(--font-mono-num), ui-monospace, monospace;
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum";
+  letter-spacing: -0.02em;
+}
+
+/* uppercase machine label */
+.label {
+  font-family: var(--font-mono-num), ui-monospace, monospace;
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  font-size: 0.66rem;
+  color: var(--text-faint);
+  font-weight: 500;
+}
+
+.card {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+}
+
+/* accent glow for PR / active */
+.glow {
+  box-shadow: 0 0 0 1px var(--accent), 0 0 24px -4px var(--accent-glow);
+}
+
+/* hide scrollbars on the app frame */
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+@keyframes pop {
+  0% { transform: scale(0.8); opacity: 0; }
+  50% { transform: scale(1.06); }
+  100% { transform: scale(1); opacity: 1; }
+}
+.animate-pop { animation: pop 0.32s cubic-bezier(0.22, 1, 0.36, 1) both; }
+
+@keyframes riseIn {
+  from { transform: translateY(8px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+.animate-rise { animation: riseIn 0.4s cubic-bezier(0.22, 1, 0.36, 1) both; }
+
+@keyframes pulseAccent {
+  0%, 100% { box-shadow: 0 0 0 0 var(--accent-glow); }
+  50% { box-shadow: 0 0 0 6px transparent; }
+}
+.animate-pulse-accent { animation: pulseAccent 1.6s ease-in-out infinite; }
+
+@keyframes sheen {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }
