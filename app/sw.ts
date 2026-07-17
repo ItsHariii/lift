@@ -35,6 +35,7 @@ self.addEventListener("push", (event) => {
       badge: "/icon.svg",
       tag: "diet-nudge",
       renotify: true,
+      requireInteraction: true,
     }),
   );
 });
