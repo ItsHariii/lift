@@ -1,25 +1,29 @@
 @import "tailwindcss";
 
-/* ===== LIFT — industrial readout theme ===== */
 :root {
-  --bg: #0a0a0b;
-  --bg-grid: #141416;
-  --surface: #141416;
-  --surface-2: #1c1c1f;
-  --line: #2a2a2e;
-  --line-bright: #3a3a40;
-  --text: #f4f4f5;
-  --text-dim: #a1a1a6;
-  --text-faint: #6b6b72;
-  --accent: #ccff00;        /* electric lime */
-  --accent-dim: #9bc400;
-  --accent-glow: rgba(204, 255, 0, 0.15);
-  --danger: #ff4d4d;
-  --gold: #ffc048;
+  --bg: #13110c;
+  --bg-2: #0d0b07;
+  --surface: #1c1811;
+  --surface-2: #262019;
+  --line: #352d21;
+  --line-bright: #4a4030;
+  --text: #f6efe0;
+  --text-dim: #c3b7a1;
+  --text-faint: #8a7d68;
+  --accent: #ff5b1f;
+  --accent-2: #ff7a3d;
+  --accent-dim: #c9451a;
+  --accent-glow: rgba(255, 91, 31, 0.22);
+  --danger: #ff5747;
+  --gold: #f2b53c;
+  --gold-2: #ffd066;
+  --gold-dim: #d99a2a;
+  --gold-glow: rgba(242, 181, 60, 0.24);
 }
 
 @theme inline {
   --color-bg: var(--bg);
+  --color-bg-2: var(--bg-2);
   --color-surface: var(--surface);
   --color-surface-2: var(--surface-2);
   --color-line: var(--line);
@@ -28,94 +32,159 @@
   --color-text-dim: var(--text-dim);
   --color-text-faint: var(--text-faint);
   --color-accent: var(--accent);
+  --color-accent-2: var(--accent-2);
   --color-accent-dim: var(--accent-dim);
   --color-danger: var(--danger);
   --color-gold: var(--gold);
-  --font-display: var(--font-archivo);
-  --font-mono: var(--font-mono-num);
+  --color-gold-dim: var(--gold-dim);
+  --font-display: var(--font-anton);
+  --font-body: var(--font-archivo);
+  --font-mono: var(--font-jetbrains);
 }
 
 * {
+  box-sizing: border-box;
   -webkit-tap-highlight-color: transparent;
 }
 
 html {
   color-scheme: dark;
+  min-height: 100%;
 }
 
 body {
-  background-color: var(--bg);
-  /* faint machined grid texture */
-  background-image:
-    linear-gradient(var(--bg-grid) 1px, transparent 1px),
-    linear-gradient(90deg, var(--bg-grid) 1px, transparent 1px);
-  background-size: 44px 44px;
-  background-position: -1px -1px;
+  min-height: 100vh;
+  margin: 0;
+  background:
+    radial-gradient(130% 55% at 50% -12%, rgba(255, 91, 31, 0.1), transparent 62%),
+    repeating-linear-gradient(90deg, var(--bg) 0, var(--bg) 43px, var(--bg-2) 43px, var(--bg-2) 44px),
+    var(--bg);
   color: var(--text);
-  font-family: var(--font-archivo), system-ui, sans-serif;
+  font-family: var(--font-archivo), sans-serif;
   -webkit-font-smoothing: antialiased;
   overscroll-behavior-y: none;
 }
 
-/* numbers readout */
-.num {
-  font-family: var(--font-mono-num), ui-monospace, monospace;
-  font-variant-numeric: tabular-nums;
-  font-feature-settings: "tnum";
-  letter-spacing: -0.02em;
+body::before {
+  position: fixed;
+  z-index: 35;
+  inset: 0;
+  pointer-events: none;
+  content: "";
+  opacity: 0.28;
+  mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.55'/%3E%3C/svg%3E");
+  background-size: 160px 160px;
 }
 
-/* uppercase machine label */
+button,
+input {
+  font: inherit;
+}
+
+button {
+  cursor: pointer;
+}
+
+::selection {
+  background: var(--accent);
+  color: #1a1206;
+}
+
+.display {
+  font-family: var(--font-anton), sans-serif;
+  font-weight: 400;
+}
+
+.num {
+  font-family: var(--font-jetbrains), ui-monospace, monospace;
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum";
+}
+
 .label {
-  font-family: var(--font-mono-num), ui-monospace, monospace;
-  text-transform: uppercase;
-  letter-spacing: 0.18em;
-  font-size: 0.66rem;
   color: var(--text-faint);
+  font-family: var(--font-jetbrains), ui-monospace, monospace;
+  font-size: 0.625rem;
   font-weight: 500;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
 }
 
 .card {
-  background: var(--surface);
   border: 1px solid var(--line);
-  border-radius: 16px;
+  border-radius: 18px;
+  background: var(--surface);
 }
 
-/* accent glow for PR / active */
+.accent-button {
+  background: linear-gradient(180deg, var(--accent-2), var(--accent));
+  color: #1a1206;
+  box-shadow: 0 12px 34px -10px var(--accent-glow);
+}
+
 .glow {
-  box-shadow: 0 0 0 1px var(--accent), 0 0 24px -4px var(--accent-glow);
+  box-shadow: 0 0 0 1px var(--accent), 0 0 26px -6px var(--accent-glow);
 }
 
-/* hide scrollbars on the app frame */
-.no-scrollbar::-webkit-scrollbar { display: none; }
-.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
 
 @keyframes pop {
   0% { transform: scale(0.8); opacity: 0; }
-  50% { transform: scale(1.06); }
+  55% { transform: scale(1.05); }
   100% { transform: scale(1); opacity: 1; }
 }
-.animate-pop { animation: pop 0.32s cubic-bezier(0.22, 1, 0.36, 1) both; }
 
 @keyframes riseIn {
-  from { transform: translateY(8px); opacity: 0; }
+  from { transform: translateY(10px); opacity: 0; }
   to { transform: translateY(0); opacity: 1; }
 }
-.animate-rise { animation: riseIn 0.4s cubic-bezier(0.22, 1, 0.36, 1) both; }
 
-@keyframes pulseAccent {
-  0%, 100% { box-shadow: 0 0 0 0 var(--accent-glow); }
-  50% { box-shadow: 0 0 0 6px transparent; }
+@keyframes stampIn {
+  0% { transform: scale(1.6) rotate(-9deg); opacity: 0; }
+  55% { transform: scale(0.93) rotate(3deg); opacity: 1; }
+  100% { transform: scale(1) rotate(-3deg); opacity: 1; }
 }
-.animate-pulse-accent { animation: pulseAccent 1.6s ease-in-out infinite; }
 
-@keyframes sheen {
-  0% { background-position: -200% 0; }
-  100% { background-position: 200% 0; }
+@keyframes ring {
+  0% { transform: scale(0.55); opacity: 0.65; }
+  100% { transform: scale(2.6); opacity: 0; }
+}
+
+@keyframes confetti {
+  0% { transform: translateY(-8px) rotate(0); opacity: 1; }
+  100% { transform: translateY(150px) rotate(340deg); opacity: 0; }
+}
+
+@keyframes drawline {
+  from { stroke-dashoffset: 900; }
+  to { stroke-dashoffset: 0; }
+}
+
+@keyframes growbar {
+  from { transform: scaleY(0); }
+  to { transform: scaleY(1); }
+}
+
+.animate-pop {
+  animation: pop 0.32s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.animate-rise {
+  animation: riseIn 0.4s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after {
+  *,
+  *::before,
+  *::after {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;

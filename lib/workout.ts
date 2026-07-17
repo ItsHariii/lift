@@ -1,9 +1,9 @@
 import { db, uid, type Workout } from "./db";
 
-/** The current unfinished workout, if any. */
-export async function getActiveWorkout(): Promise<Workout | undefined> {
+/** The current unfinished workout, or null when none (null = loaded-but-empty). */
+export async function getActiveWorkout(): Promise<Workout | null> {
   const all = await db.workouts.toArray();
-  return all.find((w) => !w.finishedAt);
+  return all.find((w) => !w.finishedAt) ?? null;
 }
 
 export async function startWorkout(opts?: {

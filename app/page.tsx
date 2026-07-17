@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useLiveQuery } from "dexie-react-hooks";
-import { db } from "@/lib/db";
+import { db, type Routine } from "@/lib/db";
 import { useSettings, useExerciseMap } from "@/lib/hooks";
 import {
   getActiveWorkout,
@@ -20,25 +20,36 @@ import PRToast, { type PRInfo } from "@/components/PRToast";
 
 function useElapsed(startedAt?: string) {
   const [now, setNow] = useState(() => Date.now());
+
   useEffect(() => {
-    const iv = setInterval(() => setNow(Date.now()), 1000);
-    return () => clearInterval(iv);
+    const interval = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(interval);
   }, []);
+
   if (!startedAt) return "00:00";
-  const s = Math.max(0, Math.floor((now - new Date(startedAt).getTime()) / 1000));
-  const h = Math.floor(s / 3600);
-  const m = Math.floor((s % 3600) / 60);
-  const ss = s % 60;
-  const pad = (n: number) => String(n).padStart(2, "0");
-  return h > 0 ? `${h}:${pad(m)}:${pad(ss)}` : `${pad(m)}:${pad(ss)}`;
+  const seconds = Math.max(
+    0,
+    Math.floor((now - new Date(startedAt).getTime()) / 1000),
+  );
+  const hours = Math.floor(seconds / 3600);
+  const minutes = Math.floor((seconds % 3600) / 60);
+  const remainder = seconds % 60;
+  const pad = (value: number) => String(value).padStart(2, "0");
+  return hours > 0
+    ? `${hours}:${pad(minutes)}:${pad(remainder)}`
+    : `${pad(minutes)}:${pad(remainder)}`;
 }
 
 export default function LogPage() {
   const settings = useSettings();
   const exMap = useExerciseMap();
   const active = useLiveQuery(() => getActiveWorkout(), [], undefined);
+  const routines = useLiveQuery(
+    () => db.routines.orderBy("createdAt").reverse().toArray(),
+    [],
+    undefined,
+  );
   const elapsed = useElapsed(active?.startedAt);
-
   const [pickerOpen, setPickerOpen] = useState(false);
   const [restStart, setRestStart] = useState<number | null>(null);
   const [pr, setPr] = useState<PRInfo | null>(null);
@@ -48,7 +59,6 @@ export default function LogPage() {
     [active?.id],
     0,
   );
-
   const exerciseIds = useMemo(() => active?.exerciseIds ?? [], [active]);
 
   const onLogged = (info: PRInfo | null) => {
@@ -56,9 +66,18 @@ export default function LogPage() {
     if (settings.autoRest) setRestStart(Date.now());
   };
 
-  const start = async () => {
+  const startFreestyle = async () => {
     confirmBuzz();
     await startWorkout();
+  };
+
+  const startRoutine = async (routine: Routine) => {
+    confirmBuzz();
+    await startWorkout({
+      routineId: routine.id,
+      routineName: routine.name,
+      exerciseIds: routine.exerciseIds,
+    });
   };
 
   const finish = async () => {
@@ -75,31 +94,79 @@ export default function LogPage() {
   };
 
   if (active === undefined) {
-    return <div className="pt-20 text-center text-text-faint">Loading…</div>;
+    return <div className="pt-20 text-center text-text-faint">Loading...</div>;
   }
 
   if (!active) {
     return (
       <div className="animate-rise">
-        <Header title="LIFT" subtitle="Ready when you are" />
-        <div className="mt-8 card relative overflow-hidden p-6 text-center">
-          <div className="pointer-events-none absolute -right-8 -top-8 h-32 w-32 rounded-full bg-accent/10 blur-2xl" />
-          <div className="label">No active session</div>
-          <p className="mt-2 text-2xl font-extrabold leading-tight">
-            Log your first set
+        <div className="mb-[30px] flex items-end justify-between">
+          <div>
+            <h1 className="display text-[66px] leading-[0.8] tracking-[0.005em]">
+              LIFT
+            </h1>
+            <div className="mt-3 h-1.5 w-[104px] rounded-sm bg-accent" />
+          </div>
+          <div className="num text-right text-[10px] leading-[1.7] tracking-[0.24em] text-text-faint">
+            EST · IRON
             <br />
-            <span className="text-text-dim">and start the clock.</span>
-          </p>
-          <button
-            onClick={start}
-            className="mt-6 w-full rounded-2xl bg-accent py-4 text-lg font-extrabold uppercase tracking-wide text-black active:scale-[0.99]"
-          >
-            Start Training
-          </button>
-          <p className="mt-3 text-sm text-text-faint">
-            Or begin from a saved plan in{" "}
-            <span className="text-text-dim">Plans</span>.
-          </p>
+            CLUB · 01
+          </div>
+        </div>
+
+        <section className="relative overflow-hidden rounded-3xl border border-line bg-surface px-6 pb-[26px] pt-[30px]">
+          <span className="display pointer-events-none absolute -right-3.5 -top-[26px] select-none text-[150px] leading-none text-surface-2">
+            01
+          </span>
+          <div className="relative">
+            <div className="label">No active session</div>
+            <h2 className="display mt-3 text-[52px] leading-[0.86]">
+              TIME TO
+              <br />
+              <span className="text-accent">WORK.</span>
+            </h2>
+            <p className="mt-4 max-w-[32ch] text-[15px] leading-6 text-text-dim">
+              Log your first set and start the clock. Every rep goes on the
+              record.
+            </p>
+            <button
+              onClick={startFreestyle}
+              className="accent-button display mt-6 flex w-full items-center justify-center gap-3 rounded-2xl border-0 px-4 py-[18px] text-[23px] tracking-[0.04em] active:scale-[0.99]"
+            >
+              START TRAINING <span className="text-[26px]">›</span>
+            </button>
+          </div>
+        </section>
+
+        <div className="mt-3.5 flex items-center gap-2.5 text-text-faint">
+          <span className="h-px flex-1 bg-line" />
+          <span className="label">or launch a plan</span>
+          <span className="h-px flex-1 bg-line" />
+        </div>
+
+        <div className="mt-3.5 flex flex-col gap-2.5">
+          {(routines ?? []).map((routine) => (
+            <button
+              key={routine.id}
+              onClick={() => startRoutine(routine)}
+              className="flex w-full items-center justify-between rounded-2xl border border-line bg-surface px-4 py-3.5 text-left active:border-accent-dim"
+            >
+              <span>
+                <span className="block text-base font-extrabold">
+                  {routine.name}
+                </span>
+                <span className="label mt-0.5 block tracking-[0.16em]">
+                  {routine.exerciseIds.length} exercises
+                </span>
+              </span>
+              <span className="display text-[22px] text-accent">›</span>
+            </button>
+          ))}
+          {routines?.length === 0 && (
+            <p className="py-2 text-center text-sm text-text-faint">
+              Build a reusable workout from Plans.
+            </p>
+          )}
         </div>
       </div>
     );
@@ -109,42 +176,44 @@ export default function LogPage() {
     <div>
       <PRToast pr={pr} />
 
-      <div className="sticky top-0 z-20 -mx-4 mb-3 border-b border-line bg-bg/85 px-4 pb-3 pt-1 backdrop-blur-xl">
-        <div className="flex items-center justify-between">
+      <header className="sticky top-0 z-20 -mx-[18px] -mt-[22px] mb-3.5 border-b border-line bg-[rgba(19,17,12,.86)] px-[18px] pb-[13px] pt-4 backdrop-blur-2xl">
+        <div className="flex items-end justify-between">
           <div>
-            <div className="label">
+            <div className="label tracking-[0.18em]">
               {active.routineName ?? "Freestyle"} · {totalSets} sets
             </div>
-            <div className="num text-3xl font-bold leading-none">{elapsed}</div>
+            <div className="display text-[46px] leading-[0.82] tracking-[0.02em] tabular-nums">
+              {elapsed}
+            </div>
           </div>
           <div className="flex gap-2">
             <button
               onClick={discard}
-              className="label rounded-xl border border-line px-3 py-2.5 text-text-dim active:border-danger active:text-danger"
+              className="label rounded-xl border border-line bg-transparent px-3 py-[11px] font-semibold tracking-[0.14em] text-text-dim active:border-danger active:text-danger"
             >
               Discard
             </button>
             <button
               onClick={finish}
-              className="rounded-xl bg-accent px-4 py-2.5 text-sm font-extrabold uppercase tracking-wide text-black active:scale-95"
+              className="display rounded-xl border-0 bg-accent px-[18px] text-[15px] tracking-[0.06em] text-[#1a1206] active:scale-95"
             >
-              Finish
+              FINISH
             </button>
           </div>
         </div>
-      </div>
+      </header>
 
-      <div className="space-y-3">
+      <div className="flex flex-col gap-3">
         {exerciseIds.map((id) => {
-          const ex = exMap?.get(id);
-          if (!ex) return null;
+          const exercise = exMap?.get(id);
+          if (!exercise) return null;
           return (
             <ExerciseBlock
               key={id}
               workoutId={active.id}
               exerciseId={id}
-              name={ex.name}
-              group={ex.muscleGroup}
+              name={exercise.name}
+              group={exercise.muscleGroup}
               unit={settings.unit}
               onLogged={onLogged}
               onRemove={() => removeExerciseFromWorkout(active.id, id)}
@@ -155,9 +224,9 @@ export default function LogPage() {
 
       <button
         onClick={() => setPickerOpen(true)}
-        className="mt-3 w-full rounded-2xl border border-dashed border-line-bright py-4 text-center font-semibold text-text-dim active:border-accent active:text-accent"
+        className="mt-3 w-full rounded-2xl border-[1.5px] border-dashed border-line-bright bg-transparent py-4 text-[15px] font-bold text-text-dim active:border-accent active:text-accent"
       >
-        ＋ Add Exercise
+        +&nbsp; ADD EXERCISE
       </button>
 
       <ExercisePicker
@@ -172,15 +241,6 @@ export default function LogPage() {
         duration={settings.restSeconds}
         onDismiss={() => setRestStart(null)}
       />
-    </div>
-  );
-}
-
-function Header({ title, subtitle }: { title: string; subtitle: string }) {
-  return (
-    <div className="flex items-baseline justify-between">
-      <h1 className="text-4xl font-black tracking-tighter">{title}</h1>
-      <span className="label">{subtitle}</span>
     </div>
   );
 }

@@ -15,7 +15,9 @@ export default function Sheet({
 }) {
   useEffect(() => {
     if (!open) return;
-    const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === "Escape") onClose();
+    };
     window.addEventListener("keydown", onKey);
     document.body.style.overflow = "hidden";
     return () => {
@@ -31,23 +33,26 @@ export default function Sheet({
       <button
         aria-label="Close"
         onClick={onClose}
-        className="absolute inset-0 bg-black/70 backdrop-blur-sm animate-[riseIn_0.2s_ease]"
+        className="absolute inset-0 border-0 bg-[rgba(6,5,3,.72)] backdrop-blur-sm"
       />
-      <div className="relative mx-auto w-full max-w-md animate-rise rounded-t-3xl border-t border-line bg-surface pb-[max(16px,env(safe-area-inset-bottom))]">
-        <div className="flex items-center justify-between px-5 pt-4 pb-2">
-          <span className="mx-auto h-1 w-10 rounded-full bg-line-bright absolute left-1/2 -translate-x-1/2 top-2.5" />
-          {title && <h2 className="text-lg font-extrabold tracking-tight">{title}</h2>}
+      <section className="animate-rise relative mx-auto w-full max-w-[440px] rounded-t-[26px] border-t border-line bg-surface pb-[max(18px,env(safe-area-inset-bottom))]">
+        <header className="flex items-center justify-between px-5 pb-2 pt-[18px]">
+          {title && (
+            <h2 className="display text-2xl tracking-[0.02em] uppercase">
+              {title}
+            </h2>
+          )}
           <button
             onClick={onClose}
-            className="ml-auto text-text-faint active:text-text text-sm label !tracking-widest"
+            className="label ml-auto border-0 bg-transparent tracking-[0.2em] text-text-faint"
           >
             Close
           </button>
-        </div>
-        <div className="max-h-[70vh] overflow-y-auto no-scrollbar px-5 pt-2">
+        </header>
+        <div className="max-h-[70vh] overflow-y-auto px-5 pb-2 pt-2 no-scrollbar">
           {children}
         </div>
-      </div>
+      </section>
     </div>
   );
 }

@@ -8,45 +8,47 @@ export default function Stepper({
   onChange,
   step = 1,
   min = 0,
-  suffix,
   decimals = 0,
 }: {
   label: string;
   value: number;
-  onChange: (v: number) => void;
+  onChange: (value: number) => void;
   step?: number;
   min?: number;
-  suffix?: string;
   decimals?: number;
 }) {
-  const set = (v: number) => {
-    const clamped = Math.max(min, Math.round(v * 100) / 100);
-    onChange(clamped);
+  const set = (next: number) => {
+    onChange(Math.max(min, Math.round(next * 100) / 100));
     tick();
   };
-  const display = Number.isInteger(value) ? String(value) : value.toFixed(decimals || 1);
+  const display = Number.isInteger(value)
+    ? String(value)
+    : value.toFixed(decimals || 1);
 
   return (
     <div className="flex-1">
-      <div className="label mb-1.5 text-center">{label}</div>
-      <div className="flex items-stretch overflow-hidden rounded-xl border border-line bg-bg">
+      <div className="label mb-[7px] text-center tracking-[0.16em]">
+        {label}
+      </div>
+      <div className="flex items-stretch overflow-hidden rounded-[14px] border border-line bg-bg-2">
         <button
           type="button"
           aria-label={`decrease ${label}`}
           onClick={() => set(value - step)}
-          className="w-11 shrink-0 text-2xl text-text-dim active:bg-surface-2 active:text-accent"
+          className="w-11 shrink-0 border-0 bg-transparent text-[26px] text-text-dim active:bg-surface-2 active:text-accent"
         >
           −
         </button>
-        <div className="flex flex-1 items-baseline justify-center gap-1 border-x border-line py-2.5">
-          <span className="num text-3xl font-bold leading-none text-text">{display}</span>
-          {suffix && <span className="label !text-[0.6rem]">{suffix}</span>}
+        <div className="flex flex-1 items-center justify-center border-x border-line py-[9px]">
+          <span className="display text-[32px] leading-none tracking-[0.02em] tabular-nums">
+            {display}
+          </span>
         </div>
         <button
           type="button"
           aria-label={`increase ${label}`}
           onClick={() => set(value + step)}
-          className="w-11 shrink-0 text-2xl text-text-dim active:bg-surface-2 active:text-accent"
+          className="w-11 shrink-0 border-0 bg-transparent text-[26px] text-text-dim active:bg-surface-2 active:text-accent"
         >
           +
         </button>

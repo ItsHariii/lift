@@ -10,21 +10,21 @@ import PageHeader from "@/components/PageHeader";
 const REST_OPTIONS = [60, 90, 120, 180, 240];
 
 export default function SettingsPage() {
-  const s = useSettings();
+  const settings = useSettings();
   const fileRef = useRef<HTMLInputElement>(null);
-  const [msg, setMsg] = useState<string | null>(null);
+  const [message, setMessage] = useState<string | null>(null);
 
-  const flash = (m: string) => {
-    setMsg(m);
-    setTimeout(() => setMsg(null), 2500);
+  const flash = (nextMessage: string) => {
+    setMessage(nextMessage);
+    setTimeout(() => setMessage(null), 2500);
   };
 
   const onImport = async (file: File) => {
     try {
       await importBackup(await file.text());
-      flash("Backup restored ✓");
-    } catch (e) {
-      flash(e instanceof Error ? e.message : "Import failed");
+      flash("Backup restored");
+    } catch (error) {
+      flash(error instanceof Error ? error.message : "Import failed");
     }
   };
 
@@ -38,101 +38,105 @@ export default function SettingsPage() {
   };
 
   return (
-    <div>
+    <div className="animate-rise">
       <PageHeader title="Setup" />
 
-      {/* units */}
       <Section label="Units">
         <div className="flex gap-2">
-          {(["kg", "lb"] as const).map((u) => (
+          {(["kg", "lb"] as const).map((unit) => (
             <button
-              key={u}
+              key={unit}
               onClick={() => {
-                saveSettings({ unit: u });
+                saveSettings({ unit });
                 confirmBuzz();
               }}
-              className={`flex-1 rounded-xl border py-3 font-extrabold uppercase tracking-wide transition-colors ${
-                s.unit === u
-                  ? "border-accent bg-accent text-black"
-                  : "border-line text-text-dim"
+              className={`display flex-1 rounded-[14px] border py-3.5 text-xl uppercase tracking-[0.04em] ${
+                settings.unit === unit
+                  ? "border-accent bg-accent text-[#1a1206]"
+                  : "border-line bg-transparent text-text-dim"
               }`}
             >
-              {u}
+              {unit}
             </button>
           ))}
         </div>
       </Section>
 
-      {/* rest */}
       <Section label="Default rest">
-        <div className="flex flex-wrap gap-2">
-          {REST_OPTIONS.map((sec) => (
+        <div className="mb-3 flex flex-wrap gap-2">
+          {REST_OPTIONS.map((seconds) => (
             <button
-              key={sec}
-              onClick={() => saveSettings({ restSeconds: sec })}
-              className={`num rounded-xl border px-4 py-2.5 font-semibold transition-colors ${
-                s.restSeconds === sec
-                  ? "border-accent bg-accent text-black"
-                  : "border-line text-text-dim"
+              key={seconds}
+              onClick={() => saveSettings({ restSeconds: seconds })}
+              className={`num rounded-xl border px-4 py-2.5 text-sm font-semibold ${
+                settings.restSeconds === seconds
+                  ? "border-accent bg-accent text-[#1a1206]"
+                  : "border-line bg-transparent text-text-dim"
               }`}
             >
-              {sec < 60 ? `${sec}s` : `${sec / 60}m${sec % 60 ? "30" : ""}`}
+              {formatRest(seconds)}
             </button>
           ))}
         </div>
         <Toggle
           label="Auto-start rest timer after each set"
-          on={s.autoRest}
-          onToggle={() => saveSettings({ autoRest: !s.autoRest })}
+          on={settings.autoRest}
+          onToggle={() => saveSettings({ autoRest: !settings.autoRest })}
         />
       </Section>
 
-      {/* data */}
       <Section label="Data · stored on this device only">
-        <button
-          onClick={downloadBackup}
-          className="w-full rounded-xl border border-line bg-bg py-3 font-semibold text-text active:border-accent active:text-accent"
-        >
-          Export backup (.json)
-        </button>
-        <button
-          onClick={() => fileRef.current?.click()}
-          className="w-full rounded-xl border border-line bg-bg py-3 font-semibold text-text active:border-accent active:text-accent"
-        >
-          Import backup
-        </button>
-        <input
-          ref={fileRef}
-          type="file"
-          accept="application/json,.json"
-          className="hidden"
-          onChange={(e) => {
-            const f = e.target.files?.[0];
-            if (f) onImport(f);
-            e.target.value = "";
-          }}
-        />
-        <button
-          onClick={reset}
-          className="w-full rounded-xl border border-danger/40 py-3 font-semibold text-danger active:bg-danger/10"
-        >
-          Erase all data
-        </button>
+        <div className="flex flex-col gap-2">
+          <button
+            onClick={downloadBackup}
+            className="w-full rounded-[14px] border border-line bg-bg-2 py-3.5 text-sm font-bold text-text active:border-accent active:text-accent"
+          >
+            Export backup (.json)
+          </button>
+          <button
+            onClick={() => fileRef.current?.click()}
+            className="w-full rounded-[14px] border border-line bg-bg-2 py-3.5 text-sm font-bold text-text active:border-accent active:text-accent"
+          >
+            Import backup
+          </button>
+          <input
+            ref={fileRef}
+            type="file"
+            accept="application/json,.json"
+            className="hidden"
+            onChange={(event) => {
+              const file = event.target.files?.[0];
+              if (file) onImport(file);
+              event.target.value = "";
+            }}
+          />
+          <button
+            onClick={reset}
+            className="w-full rounded-[14px] border border-[rgba(255,87,71,.4)] bg-transparent py-3.5 text-sm font-bold text-danger active:bg-[rgba(255,87,71,.1)]"
+          >
+            Erase all data
+          </button>
+        </div>
       </Section>
 
-      <p className="mt-6 text-center text-xs text-text-faint">
+      <p className="num text-center text-[11px] uppercase tracking-[0.12em] text-text-faint">
         LIFT · offline-first · no account, no cloud
       </p>
 
-      {msg && (
-        <div className="fixed inset-x-0 bottom-28 z-50 flex justify-center px-4">
-          <div className="animate-pop rounded-full border border-line-bright bg-surface px-5 py-2.5 text-sm font-semibold">
-            {msg}
+      {message && (
+        <div className="fixed inset-x-0 bottom-[calc(104px+env(safe-area-inset-bottom))] z-[55] flex justify-center px-4">
+          <div className="animate-pop rounded-full border border-line-bright bg-surface px-[22px] py-[11px] text-sm font-bold">
+            {message}
           </div>
         </div>
       )}
     </div>
   );
+}
+
+function formatRest(seconds: number) {
+  const minutes = seconds / 60;
+  return `${Number.isInteger(minutes) ? minutes : minutes.toFixed(1)}m`;
 }
 
 function Section({
@@ -143,10 +147,10 @@ function Section({
   children: React.ReactNode;
 }) {
   return (
-    <div className="mb-6">
-      <div className="label mb-2">{label}</div>
-      <div className="space-y-2">{children}</div>
-    </div>
+    <section className="mb-[26px]">
+      <div className="label mb-2.5">{label}</div>
+      {children}
+    </section>
   );
 }
 
@@ -162,18 +166,14 @@ function Toggle({
   return (
     <button
       onClick={onToggle}
-      className="flex w-full items-center justify-between rounded-xl border border-line bg-bg px-4 py-3 text-left"
+      className="flex w-full items-center justify-between rounded-[14px] border border-line bg-bg-2 px-4 py-3.5 text-left"
     >
       <span className="pr-4 text-sm font-medium text-text-dim">{label}</span>
       <span
-        className={`relative h-6 w-11 shrink-0 rounded-full transition-colors ${
-          on ? "bg-accent" : "bg-line-bright"
-        }`}
+        className={`relative h-[26px] w-[46px] shrink-0 rounded-full transition-colors ${on ? "bg-accent" : "bg-line-bright"}`}
       >
         <span
-          className={`absolute top-0.5 h-5 w-5 rounded-full bg-black transition-transform ${
-            on ? "translate-x-[22px]" : "translate-x-0.5"
-          }`}
+          className={`absolute top-[3px] h-5 w-5 rounded-full bg-[#1a1206] transition-[left] ${on ? "left-[23px]" : "left-[3px]"}`}
         />
       </span>
     </button>

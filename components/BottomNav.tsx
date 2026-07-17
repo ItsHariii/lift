@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 
 type Item = { href: string; label: string; icon: React.ReactNode };
 
-const I = {
+const icons = {
   routines: (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
       <path d="M4 6h16M4 12h16M4 18h10" />
@@ -33,48 +33,42 @@ const I = {
 };
 
 const items: Item[] = [
-  { href: "/routines", label: "Plans", icon: I.routines },
-  { href: "/history", label: "History", icon: I.history },
-  { href: "/progress", label: "Stats", icon: I.progress },
-  { href: "/settings", label: "Setup", icon: I.settings },
+  { href: "/routines", label: "Plans", icon: icons.routines },
+  { href: "/history", label: "History", icon: icons.history },
+  { href: "/progress", label: "Stats", icon: icons.progress },
+  { href: "/settings", label: "Setup", icon: icons.settings },
 ];
 
 export default function BottomNav() {
   const path = usePathname();
-  const isActive = (href: string) =>
-    href === "/" ? path === "/" : path.startsWith(href);
-  const logActive = path === "/" || path.startsWith("/log");
+  const isActive = (href: string) => path.startsWith(href);
+  const logActive = path === "/";
 
   return (
-    <nav className="fixed bottom-0 inset-x-0 z-40">
-      <div className="mx-auto max-w-md px-4 pb-[max(12px,env(safe-area-inset-bottom))]">
-        <div className="relative flex items-end justify-between rounded-2xl border border-line bg-surface/90 backdrop-blur-xl px-2 py-2 shadow-[0_-8px_40px_-12px_rgba(0,0,0,0.8)]">
-          {items.slice(0, 2).map((it) => (
-            <Tab key={it.href} item={it} active={isActive(it.href)} />
-          ))}
+    <nav className="fixed inset-x-0 bottom-0 z-40 px-4 pb-[calc(14px+env(safe-area-inset-bottom))]">
+      <div className="relative mx-auto flex max-w-[440px] items-end justify-between rounded-[22px] border border-line bg-[rgba(28,24,17,.94)] px-[10px] py-2 shadow-[0_-10px_44px_-14px_rgba(0,0,0,.85)] backdrop-blur-[18px]">
+        {items.slice(0, 2).map((item) => (
+          <Tab key={item.href} item={item} active={isActive(item.href)} />
+        ))}
 
-          {/* center LOG action */}
-          <Link
-            href="/"
-            aria-label="Log workout"
-            className={`-mt-8 flex h-16 w-16 shrink-0 flex-col items-center justify-center rounded-2xl border transition-transform active:scale-95 ${
-              logActive
-                ? "bg-accent border-accent text-black glow"
-                : "bg-surface-2 border-line-bright text-accent"
-            }`}
-          >
-            <svg viewBox="0 0 24 24" className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M6.5 6.5v11M17.5 6.5v11M4 9v6M20 9v6M6.5 12h11" />
-            </svg>
-            <span className="label mt-0.5 !text-[0.55rem] !tracking-[0.15em]" style={{ color: logActive ? "#000" : "var(--accent)" }}>
-              LOG
-            </span>
-          </Link>
+        <Link
+          href="/"
+          aria-label="Log workout"
+          className={`-mt-[30px] flex h-16 w-16 shrink-0 flex-col items-center justify-center gap-0.5 rounded-[22px] border-2 transition-transform active:scale-95 ${
+            logActive
+              ? "border-accent bg-accent text-[#1a1206] shadow-[0_0_0_1px_var(--accent),0_0_26px_-4px_var(--accent-glow)]"
+              : "border-line-bright bg-surface-2 text-accent"
+          }`}
+        >
+          <svg viewBox="0 0 24 24" className="h-[26px] w-[26px]" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M6.5 6.5v11M17.5 6.5v11M4 9v6M20 9v6M6.5 12h11" />
+          </svg>
+          <span className="display text-[10px] tracking-[0.1em]">LOG</span>
+        </Link>
 
-          {items.slice(2).map((it) => (
-            <Tab key={it.href} item={it} active={isActive(it.href)} />
-          ))}
-        </div>
+        {items.slice(2).map((item) => (
+          <Tab key={item.href} item={item} active={isActive(item.href)} />
+        ))}
       </div>
     </nav>
   );
@@ -84,12 +78,10 @@ function Tab({ item, active }: { item: Item; active: boolean }) {
   return (
     <Link
       href={item.href}
-      className={`flex flex-1 flex-col items-center gap-1 py-2 transition-colors ${
-        active ? "text-accent" : "text-text-faint"
-      }`}
+      className={`flex flex-1 flex-col items-center gap-[5px] py-2 ${active ? "text-accent" : "text-text-faint"}`}
     >
-      <span className="h-5 w-5">{item.icon}</span>
-      <span className="label !text-[0.55rem] !tracking-[0.12em]" style={{ color: active ? "var(--accent)" : "var(--text-faint)" }}>
+      <span className="h-[22px] w-[22px]">{item.icon}</span>
+      <span className="num text-[9px] font-semibold uppercase tracking-[0.14em]">
         {item.label}
       </span>
     </Link>

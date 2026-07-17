@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { useLiveQuery } from "dexie-react-hooks";
 import {
   exerciseIdsWithData,
@@ -23,138 +23,161 @@ export default function ProgressPage() {
   const options = useMemo(() => {
     if (!ids || !exMap) return [];
     return ids
-      .map((id) => ({ id, name: exMap.get(id)?.name ?? "?" }))
+      .map((id) => ({ id, name: exMap.get(id)?.name ?? "Exercise" }))
       .sort((a, b) => a.name.localeCompare(b.name));
   }, [ids, exMap]);
 
-  useEffect(() => {
-    if (!selected && options.length) setSelected(options[0].id);
-  }, [options, selected]);
+  const currentSelected =
+    selected && options.some((option) => option.id === selected)
+      ? selected
+      : (options[0]?.id ?? null);
 
   const series = useLiveQuery(
     () =>
-      selected ? exerciseSeries(selected) : Promise.resolve([] as ExercisePoint[]),
-    [selected],
+      currentSelected
+        ? exerciseSeries(currentSelected)
+        : Promise.resolve([] as ExercisePoint[]),
+    [currentSelected],
     [] as ExercisePoint[],
   );
   const repMaxes = useLiveQuery(
-    () => (selected ? repMaxTable(selected) : Promise.resolve([] as RepMax[])),
-    [selected],
+    () =>
+      currentSelected
+        ? repMaxTable(currentSelected)
+        : Promise.resolve([] as RepMax[]),
+    [currentSelected],
     [] as RepMax[],
   );
 
   if (ids === undefined) {
-    return <div className="pt-20 text-center text-text-faint">Loading…</div>;
+    return <div className="pt-20 text-center text-text-faint">Loading...</div>;
   }
 
   if (options.length === 0) {
     return (
-      <div>
+      <div className="animate-rise">
         <PageHeader title="Stats" />
-        <div className="card mt-4 p-8 text-center text-text-faint">
+        <div className="rounded-[18px] border border-line bg-surface p-8 text-center text-text-faint">
           Log some sets and your progress charts show up here.
         </div>
       </div>
     );
   }
 
-  const u = settings.unit;
-  const weightData = (series ?? []).map((p) => ({
-    label: p.label,
-    value: Math.round(fromKg(p.bestWeightKg, u)),
+  const unit = settings.unit;
+  const selectedName = options.find(
+    (option) => option.id === currentSelected,
+  )?.name;
+  const weightData = (series ?? []).map((point) => ({
+    label: point.label,
+    value: Math.round(fromKg(point.bestWeightKg, unit)),
   }));
-  const volumeData = (series ?? []).map((p) => ({
-    label: p.label,
-    value: Math.round(fromKg(p.volumeKg, u)),
+  const volumeData = (series ?? []).map((point) => ({
+    label: point.label,
+    value: Math.round(fromKg(point.volumeKg, unit)),
   }));
-
-  const topRm =
-    (repMaxes ?? []).length > 0
-      ? [...repMaxes!].sort((a, b) => b.bestWeightKg - a.bestWeightKg)[0]
-      : undefined;
+  const sortedRecords = [...(repMaxes ?? [])].sort(
+    (a, b) => a.reps - b.reps,
+  );
+  const topRecord = [...(repMaxes ?? [])].sort(
+    (a, b) => b.bestWeightKg - a.bestWeightKg,
+  )[0];
 
   return (
-    <div>
+    <div className="animate-rise">
       <PageHeader title="Stats" />
 
-      {/* exercise selector */}
-      <div className="-mx-4 mb-4 flex gap-2 overflow-x-auto no-scrollbar px-4">
-        {options.map((o) => (
+      <div className="-mx-[18px] mb-4 flex gap-2 overflow-x-auto px-[18px] no-scrollbar">
+        {options.map((option) => (
           <button
-            key={o.id}
-            onClick={() => setSelected(o.id)}
-            className={`shrink-0 rounded-full border px-4 py-2 text-sm font-semibold transition-colors ${
-              selected === o.id
-                ? "border-accent bg-accent text-black"
-                : "border-line text-text-dim active:border-line-bright"
+            key={option.id}
+            onClick={() => setSelected(option.id)}
+            className={`shrink-0 rounded-full border px-4 py-[9px] text-[13px] font-bold ${
+              currentSelected === option.id
+                ? "border-accent bg-accent text-[#1a1206]"
+                : "border-line bg-transparent text-text-dim active:border-line-bright"
             }`}
           >
-            {o.name}
+            {option.name}
           </button>
         ))}
       </div>
 
-      {/* headline PR */}
-      {topRm && (
-        <div className="card relative mb-3 overflow-hidden p-5">
-          <div className="pointer-events-none absolute -right-6 -top-6 h-28 w-28 rounded-full bg-accent/10 blur-2xl" />
-          <div className="label">Best lift</div>
-          <div className="mt-1 flex items-baseline gap-2">
-            <span className="num text-5xl font-bold text-accent">
-              {fmtWeight(topRm.bestWeightKg, u)}
-            </span>
-            <span className="label !text-sm">{u}</span>
-            <span className="num text-2xl font-bold text-text-dim">
-              × {topRm.reps}
-            </span>
+      {topRecord && (
+        <section className="relative mb-3 overflow-hidden rounded-[20px] border border-line bg-surface px-[22px] pb-5 pt-[22px]">
+          <span className="display pointer-events-none absolute -right-1.5 -top-4 text-[120px] leading-none text-[rgba(242,181,60,.07)]">
+            ◆
+          </span>
+          <div className="relative">
+            <div className="label text-gold-dim">
+              Best lift · {selectedName}
+            </div>
+            <div className="mt-2 flex items-baseline gap-2.5">
+              <span className="display text-[64px] leading-[0.8] text-gold [text-shadow:0_0_26px_var(--gold-glow)]">
+                {fmtWeight(topRecord.bestWeightKg, unit)}
+              </span>
+              <span className="num text-sm tracking-[0.1em] text-text-dim">
+                {unit}
+              </span>
+              <span className="display text-[34px] leading-[0.8] text-text-dim">
+                × {topRecord.reps}
+              </span>
+            </div>
           </div>
-        </div>
+        </section>
       )}
 
-      {/* best-weight trend */}
-      <div className="card mb-3 p-4">
-        <div className="label mb-2">Best weight / session</div>
+      <ChartCard label="Best weight / session">
         {weightData.length > 1 ? (
-          <WeightChart data={weightData} unit={u} />
+          <WeightChart data={weightData} unit={unit} />
         ) : (
           <p className="py-6 text-center text-sm text-text-faint">
             One more session to draw a trend.
           </p>
         )}
-      </div>
+      </ChartCard>
 
-      {/* volume */}
-      <div className="card mb-3 p-4">
-        <div className="label mb-2">Volume / session</div>
+      <ChartCard label="Volume / session">
         {volumeData.length > 0 ? (
-          <VolumeChart data={volumeData} unit={u} />
+          <VolumeChart data={volumeData} unit={unit} />
         ) : (
           <p className="py-6 text-center text-sm text-text-faint">No data.</p>
         )}
-      </div>
+      </ChartCard>
 
-      {/* rep-max table */}
-      <div className="card overflow-hidden">
-        <div className="label px-4 pt-4">Rep-max records</div>
-        <div className="mt-2 divide-y divide-line">
-          {[...(repMaxes ?? [])]
-            .sort((a, b) => a.reps - b.reps)
-            .map((rm) => (
-              <div
-                key={rm.key}
-                className="flex items-center justify-between px-4 py-2.5"
-              >
-                <span className="num text-sm text-text-dim">
-                  {rm.reps} rep{rm.reps > 1 ? "s" : ""}
-                </span>
-                <span className="num text-lg font-bold">
-                  {fmtWeight(rm.bestWeightKg, u)}
-                  <span className="ml-1 text-xs text-text-dim">{u}</span>
-                </span>
-              </div>
-            ))}
-        </div>
-      </div>
+      <section className="overflow-hidden rounded-[18px] border border-line bg-surface">
+        <div className="label px-4 pb-1 pt-4">Rep-max records</div>
+        {sortedRecords.map((record) => (
+          <div
+            key={record.key}
+            className="flex items-center justify-between border-t border-line px-4 py-[11px]"
+          >
+            <span className="num text-[13px] text-text-dim">
+              {record.reps} rep{record.reps > 1 ? "s" : ""}
+            </span>
+            <span
+              className={`display text-[22px] tracking-[0.02em] ${record.key === topRecord?.key ? "text-gold" : "text-text"}`}
+            >
+              {fmtWeight(record.bestWeightKg, unit)} {unit}
+            </span>
+          </div>
+        ))}
+      </section>
     </div>
+  );
+}
+
+function ChartCard({
+  label,
+  children,
+}: {
+  label: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <section className="mb-3 rounded-[18px] border border-line bg-surface p-4">
+      <div className="label mb-2">{label}</div>
+      {children}
+    </section>
   );
 }

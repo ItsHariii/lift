@@ -38,33 +38,38 @@ export default function ExerciseBlock({
       db.sets
         .where("workoutId")
         .equals(workoutId)
-        .filter((s) => s.exerciseId === exerciseId)
+        .filter((set) => set.exerciseId === exerciseId)
         .toArray()
-        .then((xs) => xs.sort((a, b) => a.createdAt.localeCompare(b.createdAt))),
+        .then((items) =>
+          items.sort((a, b) => a.createdAt.localeCompare(b.createdAt)),
+        ),
     [workoutId, exerciseId],
     [],
   );
-
-  const [weight, setWeight] = useState<number>(unit === "kg" ? 20 : 45);
-  const [reps, setReps] = useState<number>(8);
+  const [weight, setWeight] = useState(unit === "kg" ? 20 : 45);
+  const [reps, setReps] = useState(8);
   const primed = useRef(false);
 
-  // prefill from the most recent time this exercise was performed
   useEffect(() => {
     if (primed.current) return;
     primed.current = true;
     lastSetFor(exerciseId).then((last) => {
-      if (last) {
-        setWeight(clean(fromKg(last.weightKg, unit)));
-        setReps(last.reps);
-      }
+      if (!last) return;
+      setWeight(clean(fromKg(last.weightKg, unit)));
+      setReps(last.reps);
     });
   }, [exerciseId, unit]);
 
   const doLog = async () => {
     const weightKg = toKg(weight, unit);
-    const res = await logSet({ workoutId, exerciseId, weightKg, reps, unit });
-    if (res.isPR) {
+    const result = await logSet({
+      workoutId,
+      exerciseId,
+      weightKg,
+      reps,
+      unit,
+    });
+    if (result.isPR) {
       celebrate();
       onLogged({
         id: Date.now(),
@@ -73,25 +78,25 @@ export default function ExerciseBlock({
         unit,
         reps,
       });
-    } else {
-      confirmBuzz();
-      onLogged(null);
+      return;
     }
+    confirmBuzz();
+    onLogged(null);
   };
 
-  const prCount = (sets ?? []).filter((s) => s.isPR).length;
-
   return (
-    <div className="card animate-rise overflow-hidden">
-      <div className="flex items-center justify-between px-4 pt-3.5">
+    <section className="animate-rise overflow-hidden rounded-[20px] border border-line bg-surface">
+      <div className="flex items-start justify-between px-4 pt-[15px]">
         <div className="min-w-0">
-          <div className="label">{group}</div>
-          <h3 className="truncate text-lg font-extrabold tracking-tight">{name}</h3>
+          <div className="label tracking-[0.2em] text-accent-dim">{group}</div>
+          <h3 className="mt-0.5 truncate text-xl font-extrabold leading-[1.1] tracking-[-0.01em]">
+            {name}
+          </h3>
         </div>
         <button
           onClick={onRemove}
           aria-label={`remove ${name}`}
-          className="ml-2 shrink-0 rounded-lg px-2 py-1 text-text-faint active:text-danger"
+          className="ml-2 shrink-0 border-0 bg-transparent p-1 text-text-faint active:text-danger"
         >
           <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
             <path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14" />
@@ -99,36 +104,36 @@ export default function ExerciseBlock({
         </button>
       </div>
 
-      {/* logged sets */}
       {(sets?.length ?? 0) > 0 && (
-        <div className="mt-3 space-y-1 px-4">
-          {sets!.map((s, i) => (
+        <div className="mt-3 flex flex-col gap-0.5 px-3">
+          {sets?.map((set, index) => (
             <div
-              key={s.id}
-              className={`group flex items-center gap-3 rounded-lg px-2 py-1.5 ${
-                s.isPR ? "bg-accent/10" : ""
+              key={set.id}
+              className={`relative flex items-center gap-3 rounded-[10px] px-2.5 py-[9px] ${
+                set.isPR
+                  ? "border border-[rgba(242,181,60,.32)] bg-[rgba(242,181,60,.10)]"
+                  : "border border-transparent"
               }`}
             >
-              <span className="num w-6 text-sm font-semibold text-text-faint">
-                {i + 1}
+              <span className="num w-5 text-xs font-semibold text-text-faint">
+                {index + 1}
               </span>
-              <span className="num flex-1 text-base font-semibold">
-                {fmtWeight(s.weightKg, unit)}
-                <span className="ml-1 text-xs text-text-dim">{unit}</span>
-                <span className="mx-2 text-text-faint">×</span>
-                {s.reps}
+              <span className="num flex-1 text-base font-semibold tabular-nums">
+                {fmtWeight(set.weightKg, unit)}
+                <span className="mx-[9px] text-text-faint">×</span>
+                {set.reps}
               </span>
-              {s.isPR && (
-                <span className="label !text-accent-dim flex items-center gap-1">
+              {set.isPR && (
+                <span className="num text-[10px] font-semibold tracking-[0.14em] text-gold">
                   ◆ PR
                 </span>
               )}
               <button
-                onClick={() => deleteSet(s.id)}
+                onClick={() => deleteSet(set.id)}
                 aria-label="delete set"
-                className="text-text-faint active:text-danger"
+                className="border-0 bg-transparent p-0.5 text-text-faint active:text-danger"
               >
-                <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round">
+                <svg viewBox="0 0 24 24" className="h-[15px] w-[15px]" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round">
                   <path d="M18 6 6 18M6 6l12 12" />
                 </svg>
               </button>
@@ -137,10 +142,9 @@ export default function ExerciseBlock({
         </div>
       )}
 
-      {/* input row */}
-      <div className="mt-3 flex items-end gap-2.5 px-4">
+      <div className="mt-3 flex gap-2.5 px-4">
         <Stepper
-          label={`Weight (${unit})`}
+          label={`Weight · ${unit}`}
           value={weight}
           onChange={setWeight}
           step={unitStep(unit)}
@@ -151,11 +155,10 @@ export default function ExerciseBlock({
 
       <button
         onClick={doLog}
-        className="mt-3 mb-3 mx-4 w-[calc(100%-2rem)] rounded-xl bg-accent py-3.5 text-center font-extrabold uppercase tracking-wide text-black active:scale-[0.99]"
+        className="accent-button display mx-4 mb-4 mt-3.5 w-[calc(100%-2rem)] rounded-[14px] border-0 py-3.5 text-xl tracking-[0.06em] active:scale-[0.99]"
       >
-        Log Set{prCount > 0 ? "  ·  " : ""}
-        {prCount > 0 && <span className="text-black/70">{prCount} PR</span>}
+        LOG SET
       </button>
-    </div>
+    </section>
   );
 }

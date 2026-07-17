@@ -6,9 +6,11 @@ export default function PageHeader({
   right?: React.ReactNode;
 }) {
   return (
-    <div className="mb-5 flex items-end justify-between">
-      <h1 className="text-4xl font-black tracking-tighter">{title}</h1>
-      {right}
+    <div className="mb-[18px] flex items-end justify-between">
+      <h1 className="display text-[46px] leading-[0.82] tracking-[0.01em] uppercase">
+        {title}
+      </h1>
+      {right ?? <span className="mb-2 h-[5px] w-[52px] rounded-sm bg-accent" />}
     </div>
   );
 }

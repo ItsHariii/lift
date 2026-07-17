@@ -13,9 +13,9 @@ import {
 } from "recharts";
 
 const axis = {
-  stroke: "#6b6b72",
+  stroke: "#8a7d68",
   fontSize: 10,
-  fontFamily: "var(--font-mono-num)",
+  fontFamily: "var(--font-jetbrains)",
   tickLine: false,
 };
 
@@ -56,25 +56,25 @@ export function WeightChart({
       <AreaChart data={data} margin={{ top: 8, right: 6, left: -18, bottom: 0 }}>
         <defs>
           <linearGradient id="wfill" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#ccff00" stopOpacity={0.35} />
-            <stop offset="100%" stopColor="#ccff00" stopOpacity={0} />
+            <stop offset="0%" stopColor="#ff5b1f" stopOpacity={0.32} />
+            <stop offset="100%" stopColor="#ff5b1f" stopOpacity={0} />
           </linearGradient>
         </defs>
-        <CartesianGrid stroke="#2a2a2e" vertical={false} />
+        <CartesianGrid stroke="#352d21" vertical={false} />
         <XAxis dataKey="label" {...axis} interval="preserveStartEnd" minTickGap={24} />
         <YAxis {...axis} width={38} />
         <Tooltip
           content={<TipBox unit={unit} suffix={unit} />}
-          cursor={{ stroke: "#3a3a40" }}
+          cursor={{ stroke: "#4a4030" }}
         />
         <Area
           type="monotone"
           dataKey="value"
-          stroke="#ccff00"
+          stroke="#ff5b1f"
           strokeWidth={2.5}
           fill="url(#wfill)"
-          dot={{ r: 2.5, fill: "#ccff00", strokeWidth: 0 }}
-          activeDot={{ r: 4, fill: "#ccff00" }}
+          dot={{ r: 2.5, fill: "#ff5b1f", strokeWidth: 0 }}
+          activeDot={{ r: 4, fill: "#ff5b1f" }}
         />
       </AreaChart>
     </ResponsiveContainer>
@@ -90,15 +90,19 @@ export function VolumeChart({
 }) {
   return (
     <ResponsiveContainer width="100%" height={150}>
-      <BarChart data={data} margin={{ top: 8, right: 6, left: -18, bottom: 0 }}>
-        <CartesianGrid stroke="#2a2a2e" vertical={false} />
+      <BarChart data={data} margin={{ top: 8, right: 6, left: 2, bottom: 0 }}>
+        <CartesianGrid stroke="#352d21" vertical={false} />
         <XAxis dataKey="label" {...axis} interval="preserveStartEnd" minTickGap={24} />
-        <YAxis {...axis} width={38} />
+        <YAxis
+          {...axis}
+          width={48}
+          tickFormatter={(v) => (v >= 1000 ? `${Math.round(v / 1000)}k` : `${v}`)}
+        />
         <Tooltip
           content={<TipBox unit={unit} suffix={`${unit} vol`} />}
-          cursor={{ fill: "rgba(204,255,0,0.08)" }}
+          cursor={{ fill: "rgba(255,91,31,0.08)" }}
         />
-        <Bar dataKey="value" fill="#9bc400" radius={[3, 3, 0, 0]} />
+        <Bar dataKey="value" fill="#c9451a" radius={[3, 3, 0, 0]} />
       </BarChart>
     </ResponsiveContainer>
   );

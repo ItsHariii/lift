@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Archivo, JetBrains_Mono } from "next/font/google";
+import { Anton, Archivo, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 import BottomNav from "@/components/BottomNav";
 import Boot from "@/components/Boot";
@@ -10,8 +10,14 @@ const archivo = Archivo({
   weight: ["400", "500", "600", "700", "800", "900"],
 });
 
+const anton = Anton({
+  variable: "--font-anton",
+  subsets: ["latin"],
+  weight: "400",
+});
+
 const mono = JetBrains_Mono({
-  variable: "--font-mono-num",
+  variable: "--font-jetbrains",
   subsets: ["latin"],
   weight: ["400", "500", "600", "700"],
 });
@@ -29,7 +35,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#0a0a0b",
+  themeColor: "#13110c",
   width: "device-width",
   initialScale: 1,
   maximumScale: 1,
@@ -45,11 +51,11 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${archivo.variable} ${mono.variable} h-full`}
+      className={`${anton.variable} ${archivo.variable} ${mono.variable} h-full`}
     >
-      <body className="min-h-full flex flex-col">
+      <body className="min-h-full">
         <Boot />
-        <main className="flex-1 w-full max-w-md mx-auto px-4 pt-5 pb-28 no-scrollbar">
+        <main className="relative z-[1] mx-auto min-h-screen w-full max-w-[440px] px-[18px] pb-[132px] pt-[22px] no-scrollbar">
           {children}
         </main>
         <BottomNav />
