@@ -60,6 +60,8 @@ export interface Settings {
   restSeconds: number;
   bodyweightKg?: number;
   autoRest: boolean;
+  /** UI reflection of push-nudge opt-in (delivery is server-driven). */
+  nudgesEnabled?: boolean;
 }
 
 export class LiftDB extends Dexie {

@@ -1,0 +1,19 @@
+name: Diet nudge
+
+# Pings the /api/nudge route so the server sends a Web Push notification.
+# Free alternative to Vercel Cron (Hobby plan is limited to ~daily).
+# GitHub Actions cron is UTC and may lag a few minutes — fine for nudges.
+on:
+  schedule:
+    # every 30 min, 12:00–02:00 UTC (~8am–10pm US Eastern). Adjust to your TZ.
+    - cron: "*/30 12-23,0,1 * * *"
+  workflow_dispatch: {} # allow manual "Run workflow" for testing
+
+jobs:
+  nudge:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger push
+        run: |
+          curl -fsS -X GET "${{ secrets.APP_URL }}/api/nudge" \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}"

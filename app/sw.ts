@@ -19,3 +19,40 @@ const serwist = new Serwist({
 });
 
 serwist.addEventListeners();
+
+// --- Diet nudges (Web Push) ---------------------------------------------
+self.addEventListener("push", (event) => {
+  let data: { title?: string; body?: string } = {};
+  try {
+    data = event.data?.json() ?? {};
+  } catch {
+    data = { body: event.data?.text() };
+  }
+  event.waitUntil(
+    self.registration.showNotification(data.title ?? "LIFT", {
+      body: data.body ?? "Stick to the plan.",
+      icon: "/icon.svg",
+      badge: "/icon.svg",
+      tag: "diet-nudge",
+      renotify: true,
+    }),
+  );
+});
+
+self.addEventListener("notificationclick", (event) => {
+  event.notification.close();
+  event.waitUntil(
+    (async () => {
+      const all = await self.clients.matchAll({
+        type: "window",
+        includeUncontrolled: true,
+      });
+      const existing = all.find((c) => "focus" in c);
+      if (existing) {
+        await existing.focus();
+      } else {
+        await self.clients.openWindow("/");
+      }
+    })(),
+  );
+});

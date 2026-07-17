@@ -1,10 +1,11 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useSettings, saveSettings } from "@/lib/hooks";
 import { downloadBackup, importBackup, clearAll } from "@/lib/backup";
 import { ensureSeeded } from "@/lib/seed";
 import { confirmBuzz } from "@/lib/haptics";
+import { subscribeToNudges, notificationPermission } from "@/lib/push";
 import PageHeader from "@/components/PageHeader";
 
 const REST_OPTIONS = [60, 90, 120, 180, 240];
@@ -13,10 +14,45 @@ export default function SettingsPage() {
   const settings = useSettings();
   const fileRef = useRef<HTMLInputElement>(null);
   const [message, setMessage] = useState<string | null>(null);
+  const [perm, setPerm] = useState<NotificationPermission | "unsupported">(
+    "default",
+  );
+  const [subJson, setSubJson] = useState<string | null>(null);
+  const [subscribing, setSubscribing] = useState(false);
+
+  useEffect(() => {
+    setPerm(notificationPermission());
+  }, []);
 
   const flash = (nextMessage: string) => {
     setMessage(nextMessage);
     setTimeout(() => setMessage(null), 2500);
+  };
+
+  const enableNudges = async () => {
+    setSubscribing(true);
+    try {
+      const json = await subscribeToNudges();
+      setSubJson(json);
+      setPerm(notificationPermission());
+      saveSettings({ nudgesEnabled: true });
+      confirmBuzz();
+      flash("Subscribed — copy the token below");
+    } catch (error) {
+      flash(error instanceof Error ? error.message : "Could not enable");
+    } finally {
+      setSubscribing(false);
+    }
+  };
+
+  const copyToken = async () => {
+    if (!subJson) return;
+    try {
+      await navigator.clipboard.writeText(subJson);
+      flash("Token copied");
+    } catch {
+      flash("Copy failed — select manually");
+    }
   };
 
   const onImport = async (file: File) => {
@@ -83,6 +119,60 @@ export default function SettingsPage() {
           on={settings.autoRest}
           onToggle={() => saveSettings({ autoRest: !settings.autoRest })}
         />
+      </Section>
+
+      <Section label="Diet reminders · toxic motivation">
+        {perm === "unsupported" ? (
+          <p className="rounded-[14px] border border-line bg-bg-2 px-4 py-3.5 text-sm text-text-dim">
+            Push not supported here. On iPhone, open the installed app (Add to
+            Home Screen) in Safari first.
+          </p>
+        ) : (
+          <div className="flex flex-col gap-2">
+            <button
+              onClick={enableNudges}
+              disabled={subscribing}
+              className={`w-full rounded-[14px] border py-3.5 text-sm font-bold disabled:opacity-50 ${
+                perm === "granted"
+                  ? "border-accent bg-accent text-[#1a1206]"
+                  : "border-line bg-bg-2 text-text active:border-accent active:text-accent"
+              }`}
+            >
+              {subscribing
+                ? "Enabling…"
+                : perm === "granted"
+                  ? "Nudges on · re-subscribe"
+                  : "Enable toxic nudges"}
+            </button>
+
+            {subJson && (
+              <div className="flex flex-col gap-2 rounded-[14px] border border-line bg-bg-2 p-3">
+                <p className="text-[11px] leading-snug text-text-dim">
+                  One-time setup: paste this token into the{" "}
+                  <span className="num text-accent">PUSH_SUBSCRIPTION</span> env
+                  var in Vercel, then redeploy.
+                </p>
+                <textarea
+                  readOnly
+                  value={subJson}
+                  onFocus={(e) => e.currentTarget.select()}
+                  className="num h-24 w-full resize-none rounded-lg border border-line bg-bg-1 p-2 text-[10px] text-text-dim"
+                />
+                <button
+                  onClick={copyToken}
+                  className="w-full rounded-lg border border-line py-2.5 text-xs font-bold text-text active:border-accent active:text-accent"
+                >
+                  Copy token
+                </button>
+              </div>
+            )}
+
+            <p className="text-[11px] leading-snug text-text-faint">
+              Fires every 30 min during the day once the cron is live. iPhone:
+              install to Home Screen first (iOS 16.4+).
+            </p>
+          </div>
+        )}
       </Section>
 
       <Section label="Data · stored on this device only">
