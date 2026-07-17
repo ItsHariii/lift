@@ -108,6 +108,7 @@ export interface ExercisePoint {
   label: string;
   bestWeightKg: number;
   volumeKg: number;
+  setCount: number;
 }
 
 /** Per-session best-weight + volume series for one exercise (oldest→newest). */
@@ -118,20 +119,35 @@ export async function exerciseSeries(
     .where("exerciseId")
     .equals(exerciseId)
     .toArray();
-  const byDay = new Map<string, WorkoutSet[]>();
+  const byWorkout = new Map<string, WorkoutSet[]>();
   for (const s of sets) {
-    const k = dayKey(s.createdAt);
-    if (!byDay.has(k)) byDay.set(k, []);
-    byDay.get(k)!.push(s);
+    if (!byWorkout.has(s.workoutId)) byWorkout.set(s.workoutId, []);
+    byWorkout.get(s.workoutId)?.push(s);
   }
-  return [...byDay.entries()]
-    .sort((a, b) => a[0].localeCompare(b[0]))
-    .map(([k, ss]) => ({
-      date: k,
-      label: k.slice(5),
-      bestWeightKg: Math.max(...ss.map((s) => s.weightKg)),
-      volumeKg: ss.reduce((a, s) => a + s.weightKg * s.reps, 0),
-    }));
+  const workouts = await db.workouts.bulkGet([...byWorkout.keys()]);
+  const startedAtByWorkout = new Map(
+    workouts.flatMap((workout) =>
+      workout ? [[workout.id, workout.startedAt] as const] : [],
+    ),
+  );
+
+  return [...byWorkout.entries()]
+    .map(([workoutId, workoutSets]) => {
+      const startedAt =
+        startedAtByWorkout.get(workoutId) ?? workoutSets[0].createdAt;
+      const date = dayKey(startedAt);
+      return {
+        date: startedAt,
+        label: date.slice(5),
+        bestWeightKg: Math.max(...workoutSets.map((set) => set.weightKg)),
+        volumeKg: workoutSets.reduce(
+          (total, set) => total + set.weightKg * set.reps,
+          0,
+        ),
+        setCount: workoutSets.length,
+      };
+    })
+    .sort((a, b) => a.date.localeCompare(b.date));
 }
 
 export async function exerciseIdsWithData(): Promise<string[]> {

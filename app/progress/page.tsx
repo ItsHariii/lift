@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useDeferredValue, useMemo, useState } from "react";
 import { useLiveQuery } from "dexie-react-hooks";
 import {
   exerciseIdsWithData,
@@ -12,25 +12,46 @@ import { useSettings, useExerciseMap } from "@/lib/hooks";
 import { fmtWeight, fromKg } from "@/lib/units";
 import type { RepMax } from "@/lib/db";
 import PageHeader from "@/components/PageHeader";
+import Sheet from "@/components/Sheet";
 import { WeightChart, VolumeChart } from "@/components/ProgressChart";
+
+interface ExerciseOption {
+  id: string;
+  name: string;
+  group: string;
+}
 
 export default function ProgressPage() {
   const settings = useSettings();
   const exMap = useExerciseMap();
   const ids = useLiveQuery(() => exerciseIdsWithData(), [], undefined);
   const [selected, setSelected] = useState<string | null>(null);
+  const [pickerOpen, setPickerOpen] = useState(false);
 
   const options = useMemo(() => {
     if (!ids || !exMap) return [];
     return ids
-      .map((id) => ({ id, name: exMap.get(id)?.name ?? "Exercise" }))
-      .sort((a, b) => a.name.localeCompare(b.name));
+      .map((id) => {
+        const exercise = exMap.get(id);
+        return {
+          id,
+          name: exercise?.name ?? "Exercise",
+          group: exercise?.muscleGroup ?? "Other",
+        };
+      })
+      .sort(
+        (a, b) =>
+          a.group.localeCompare(b.group) || a.name.localeCompare(b.name),
+      );
   }, [ids, exMap]);
 
   const currentSelected =
     selected && options.some((option) => option.id === selected)
       ? selected
       : (options[0]?.id ?? null);
+  const selectedExercise = options.find(
+    (option) => option.id === currentSelected,
+  );
 
   const series = useLiveQuery(
     () =>
@@ -65,9 +86,6 @@ export default function ProgressPage() {
   }
 
   const unit = settings.unit;
-  const selectedName = options.find(
-    (option) => option.id === currentSelected,
-  )?.name;
   const weightData = (series ?? []).map((point) => ({
     label: point.label,
     value: Math.round(fromKg(point.bestWeightKg, unit)),
@@ -82,25 +100,54 @@ export default function ProgressPage() {
   const topRecord = [...(repMaxes ?? [])].sort(
     (a, b) => b.bestWeightKg - a.bestWeightKg,
   )[0];
+  const totalSets = (series ?? []).reduce(
+    (total, point) => total + point.setCount,
+    0,
+  );
+  const totalVolumeKg = (series ?? []).reduce(
+    (total, point) => total + point.volumeKg,
+    0,
+  );
 
   return (
     <div className="animate-rise">
       <PageHeader title="Stats" />
 
-      <div className="app-bleed mb-4 flex gap-2 overflow-x-auto no-scrollbar">
-        {options.map((option) => (
-          <button
-            key={option.id}
-            onClick={() => setSelected(option.id)}
-            className={`shrink-0 rounded-full border px-4 py-[9px] text-[13px] font-bold ${
-              currentSelected === option.id
-                ? "border-accent bg-accent text-[#1a1206]"
-                : "border-line bg-transparent text-text-dim active:border-line-bright"
-            }`}
-          >
-            {option.name}
-          </button>
-        ))}
+      <button
+        onClick={() => setPickerOpen(true)}
+        className="mb-3 flex w-full items-center gap-3 rounded-[18px] border border-line bg-surface px-4 py-3.5 text-left active:border-accent"
+      >
+        <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[13px] border border-line bg-bg-2 text-accent">
+          <svg viewBox="0 0 24 24" className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M6.5 6.5v11M17.5 6.5v11M4 9v6M20 9v6M6.5 12h11" />
+          </svg>
+        </span>
+        <span className="min-w-0 flex-1">
+          <span className="label block text-accent-dim">
+            {selectedExercise?.group} · exercise
+          </span>
+          <span className="mt-0.5 block truncate text-[17px] font-extrabold">
+            {selectedExercise?.name}
+          </span>
+        </span>
+        <span className="flex shrink-0 items-center gap-1.5">
+          <span className="num text-[10px] uppercase tracking-[0.14em] text-text-faint">
+            Change
+          </span>
+          <svg viewBox="0 0 24 24" className="h-5 w-5 text-accent" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="m9 18 6-6-6-6" />
+          </svg>
+        </span>
+      </button>
+
+      <div className="mb-3 grid grid-cols-3 gap-2">
+        <Metric label="Sessions" value={String(series?.length ?? 0)} />
+        <Metric label="Sets" value={String(totalSets)} />
+        <Metric
+          label="Volume"
+          value={formatCompact(fromKg(totalVolumeKg, unit))}
+          suffix={unit}
+        />
       </div>
 
       {topRecord && (
@@ -110,10 +157,10 @@ export default function ProgressPage() {
           </span>
           <div className="relative">
             <div className="label text-gold-dim">
-              Best lift · {selectedName}
+              Best lift · {selectedExercise?.name}
             </div>
             <div className="mt-2 flex items-baseline gap-2.5">
-              <span className="display text-[64px] leading-[0.8] text-gold [text-shadow:0_0_26px_var(--gold-glow)]">
+              <span className="display text-[clamp(54px,15vw,64px)] leading-[0.8] text-gold [text-shadow:0_0_26px_var(--gold-glow)]">
                 {fmtWeight(topRecord.bestWeightKg, unit)}
               </span>
               <span className="num text-sm tracking-[0.1em] text-text-dim">
@@ -163,6 +210,144 @@ export default function ProgressPage() {
           </div>
         ))}
       </section>
+
+      <StatsExercisePicker
+        open={pickerOpen}
+        options={options}
+        selectedId={currentSelected}
+        onClose={() => setPickerOpen(false)}
+        onSelect={(id) => {
+          setSelected(id);
+          setPickerOpen(false);
+        }}
+      />
+    </div>
+  );
+}
+
+function StatsExercisePicker({
+  open,
+  options,
+  selectedId,
+  onClose,
+  onSelect,
+}: {
+  open: boolean;
+  options: ExerciseOption[];
+  selectedId: string | null;
+  onClose: () => void;
+  onSelect: (id: string) => void;
+}) {
+  const [query, setQuery] = useState("");
+  const deferredQuery = useDeferredValue(query.trim().toLowerCase());
+  const grouped = useMemo(() => {
+    const groups = new Map<string, ExerciseOption[]>();
+    for (const option of options) {
+      if (
+        deferredQuery &&
+        !`${option.name} ${option.group}`.toLowerCase().includes(deferredQuery)
+      ) {
+        continue;
+      }
+      if (!groups.has(option.group)) groups.set(option.group, []);
+      groups.get(option.group)?.push(option);
+    }
+    return groups;
+  }, [deferredQuery, options]);
+
+  const close = () => {
+    setQuery("");
+    onClose();
+  };
+
+  return (
+    <Sheet open={open} onClose={close} title="Choose Exercise">
+      <div className="relative mb-4">
+        <svg viewBox="0 0 24 24" className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-text-faint" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+          <circle cx="11" cy="11" r="7" />
+          <path d="m20 20-3.5-3.5" />
+        </svg>
+        <input
+          value={query}
+          onChange={(event) => setQuery(event.target.value)}
+          placeholder={`Search ${options.length} tracked exercises`}
+          className="w-full rounded-[14px] border border-line bg-bg-2 py-3.5 pl-12 pr-4 text-base text-text outline-none placeholder:text-text-faint focus:border-accent"
+        />
+      </div>
+
+      <div className="flex flex-col gap-5">
+        {[...grouped.entries()].map(([group, exercises]) => (
+          <section key={group} className="[content-visibility:auto]">
+            <div className="mb-2 flex items-center justify-between">
+              <span className="label text-accent-dim">{group}</span>
+              <span className="num text-[10px] text-text-faint">
+                {exercises.length}
+              </span>
+            </div>
+            <div className="flex flex-col gap-2">
+              {exercises.map((exercise) => {
+                const active = exercise.id === selectedId;
+                return (
+                  <button
+                    key={exercise.id}
+                    onClick={() => {
+                      setQuery("");
+                      onSelect(exercise.id);
+                    }}
+                    className={`flex min-h-12 items-center justify-between rounded-[14px] border px-4 py-3 text-left ${
+                      active
+                        ? "border-accent bg-[rgba(255,91,31,.1)] text-accent"
+                        : "border-line bg-bg-2 text-text active:border-line-bright"
+                    }`}
+                  >
+                    <span className="font-bold">{exercise.name}</span>
+                    {active ? (
+                      <svg viewBox="0 0 24 24" className="h-5 w-5 shrink-0" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="m5 12 4 4L19 6" />
+                      </svg>
+                    ) : (
+                      <svg viewBox="0 0 24 24" className="h-5 w-5 shrink-0 text-text-faint" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="m9 18 6-6-6-6" />
+                      </svg>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          </section>
+        ))}
+        {grouped.size === 0 && (
+          <p className="py-10 text-center text-text-faint">
+            No tracked exercise matches &ldquo;{query.trim()}&rdquo;.
+          </p>
+        )}
+      </div>
+    </Sheet>
+  );
+}
+
+function Metric({
+  label,
+  value,
+  suffix,
+}: {
+  label: string;
+  value: string;
+  suffix?: string;
+}) {
+  return (
+    <div className="rounded-2xl border border-line bg-surface px-3 py-3.5">
+      <div className="label tracking-[0.14em]">{label}</div>
+      <div className="mt-1.5 flex items-baseline gap-1">
+        <span className="display truncate text-[30px] leading-[0.85]">
+          {value}
+        </span>
+        {suffix && (
+          <span className="num text-[9px] uppercase text-text-faint">
+            {suffix}
+          </span>
+        )}
+      </div>
     </div>
   );
 }
@@ -180,4 +365,13 @@ function ChartCard({
       {children}
     </section>
   );
+}
+
+function formatCompact(value: number) {
+  const rounded = Math.round(value);
+  if (Math.abs(rounded) < 1_000) return rounded.toLocaleString();
+  if (Math.abs(rounded) < 1_000_000) {
+    return `${(rounded / 1_000).toFixed(rounded < 10_000 ? 1 : 0)}k`;
+  }
+  return `${(rounded / 1_000_000).toFixed(1)}m`;
 }
