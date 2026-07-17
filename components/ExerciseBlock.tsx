@@ -22,6 +22,8 @@ export default function ExerciseBlock({
   name,
   group,
   unit,
+  defaultWeightKg,
+  defaultReps,
   onLogged,
   onRemove,
 }: {
@@ -30,6 +32,8 @@ export default function ExerciseBlock({
   name: string;
   group: string;
   unit: Unit;
+  defaultWeightKg?: number;
+  defaultReps?: number;
   onLogged: (pr: PRInfo | null) => void;
   onRemove: () => void;
 }) {
@@ -46,8 +50,14 @@ export default function ExerciseBlock({
     [workoutId, exerciseId],
     [],
   );
-  const [weight, setWeight] = useState(unit === "kg" ? 20 : 45);
-  const [reps, setReps] = useState(8);
+  const [weight, setWeight] = useState(
+    defaultWeightKg == null
+      ? unit === "kg"
+        ? 20
+        : 45
+      : clean(fromKg(defaultWeightKg, unit)),
+  );
+  const [reps, setReps] = useState(defaultReps ?? 8);
   const primed = useRef(false);
 
   useEffect(() => {

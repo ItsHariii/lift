@@ -215,6 +215,8 @@ export default function LogPage() {
               name={exercise.name}
               group={exercise.muscleGroup}
               unit={settings.unit}
+              defaultWeightKg={exercise.defaultWeightKg}
+              defaultReps={exercise.defaultReps}
               onLogged={onLogged}
               onRemove={() => removeExerciseFromWorkout(active.id, id)}
             />

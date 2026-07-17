@@ -6,6 +6,9 @@ export interface Exercise {
   name: string;
   muscleGroup: string;
   builtin?: boolean;
+  /** Personal starting values used until the exercise has a logged set. */
+  defaultWeightKg?: number;
+  defaultReps?: number;
 }
 
 export interface Workout {
