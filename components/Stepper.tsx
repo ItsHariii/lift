@@ -35,12 +35,12 @@ export default function Stepper({
           type="button"
           aria-label={`decrease ${label}`}
           onClick={() => set(value - step)}
-          className="w-11 shrink-0 border-0 bg-transparent text-[26px] text-text-dim active:bg-surface-2 active:text-accent"
+          className="w-[clamp(38px,10vw,44px)] shrink-0 border-0 bg-transparent text-[26px] text-text-dim active:bg-surface-2 active:text-accent"
         >
           −
         </button>
         <div className="flex flex-1 items-center justify-center border-x border-line py-[9px]">
-          <span className="display text-[32px] leading-none tracking-[0.02em] tabular-nums">
+          <span className="display text-[clamp(28px,7.5vw,32px)] leading-none tracking-[0.02em] tabular-nums">
             {display}
           </span>
         </div>
@@ -48,7 +48,7 @@ export default function Stepper({
           type="button"
           aria-label={`increase ${label}`}
           onClick={() => set(value + step)}
-          className="w-11 shrink-0 border-0 bg-transparent text-[26px] text-text-dim active:bg-surface-2 active:text-accent"
+          className="w-[clamp(38px,10vw,44px)] shrink-0 border-0 bg-transparent text-[26px] text-text-dim active:bg-surface-2 active:text-accent"
         >
           +
         </button>

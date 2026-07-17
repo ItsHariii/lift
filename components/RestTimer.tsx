@@ -46,7 +46,7 @@ export default function RestTimer({
   const seconds = Math.floor(remaining % 60);
 
   return (
-    <div className="fixed inset-x-0 bottom-[calc(98px+env(safe-area-inset-bottom))] z-30 px-4">
+    <div className="safe-fixed-inline fixed inset-x-0 bottom-[calc(98px+var(--safe-bottom))] z-30">
       <div className="mx-auto max-w-[440px]">
         <div
           className={`relative flex items-center gap-3 overflow-hidden rounded-[18px] border bg-[rgba(28,24,17,.96)] px-3 py-[11px] backdrop-blur-[14px] ${

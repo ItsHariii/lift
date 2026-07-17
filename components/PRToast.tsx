@@ -40,7 +40,7 @@ export default function PRToast({ pr }: { pr: PRInfo | null }) {
           setDismissedId(pr.id);
         }
       }}
-      className="fixed inset-0 z-[60] flex items-center justify-center overflow-hidden bg-[rgba(8,6,3,.74)] p-[26px] backdrop-blur-[7px]"
+      className="safe-modal-padding fixed inset-0 z-[60] flex items-center justify-center overflow-hidden bg-[rgba(8,6,3,.74)] backdrop-blur-[7px]"
     >
       {confetti.map((piece, index) => (
         <span
@@ -67,7 +67,7 @@ export default function PRToast({ pr }: { pr: PRInfo | null }) {
           <h2 className="mt-3 text-[19px] font-black uppercase tracking-[0.01em]">
             {pr.exercise}
           </h2>
-          <div className="display mt-3.5 text-[92px] leading-[0.8] tracking-[0.01em] text-gold [text-shadow:0_0_28px_var(--gold-glow)]">
+          <div className="display mt-3.5 text-[clamp(72px,21vw,92px)] leading-[0.8] tracking-[0.01em] text-gold [text-shadow:0_0_28px_var(--gold-glow)]">
             {pr.weight}
           </div>
           <div className="num mt-2 text-sm font-medium tracking-[0.1em] text-text-dim">

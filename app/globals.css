@@ -1,6 +1,12 @@
 @import "tailwindcss";
 
 :root {
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-right: env(safe-area-inset-right, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-left: env(safe-area-inset-left, 0px);
+  --app-gutter: clamp(14px, 4.2vw, 18px);
+  --app-top-space: clamp(18px, 2.4vh, 22px);
   --bg: #13110c;
   --bg-2: #0d0b07;
   --surface: #1c1811;
@@ -50,10 +56,13 @@
 html {
   color-scheme: dark;
   min-height: 100%;
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
 }
 
 body {
   min-height: 100vh;
+  min-height: 100dvh;
   margin: 0;
   background:
     radial-gradient(130% 55% at 50% -12%, rgba(255, 91, 31, 0.1), transparent 62%),
@@ -63,6 +72,48 @@ body {
   font-family: var(--font-archivo), sans-serif;
   -webkit-font-smoothing: antialiased;
   overscroll-behavior-y: none;
+}
+
+.app-shell {
+  min-height: 100vh;
+  min-height: 100dvh;
+  padding-top: calc(var(--safe-top) + var(--app-top-space));
+  padding-right: var(--app-gutter);
+  padding-bottom: calc(132px + var(--safe-bottom));
+  padding-left: var(--app-gutter);
+}
+
+.app-bleed {
+  margin-right: calc(var(--app-gutter) * -1);
+  margin-left: calc(var(--app-gutter) * -1);
+  padding-right: var(--app-gutter);
+  padding-left: var(--app-gutter);
+}
+
+.active-session-header {
+  top: var(--safe-top);
+  margin-top: calc(var(--app-top-space) * -1);
+}
+
+.safe-fixed-inline {
+  padding-right: max(16px, var(--safe-right));
+  padding-left: max(16px, var(--safe-left));
+}
+
+.safe-modal-padding {
+  padding-top: max(26px, var(--safe-top));
+  padding-right: max(26px, var(--safe-right));
+  padding-bottom: max(26px, var(--safe-bottom));
+  padding-left: max(26px, var(--safe-left));
+}
+
+.sheet-panel {
+  max-height: calc(100dvh - var(--safe-top) - 12px);
+  padding-bottom: max(18px, var(--safe-bottom));
+}
+
+.sheet-scroll {
+  max-height: min(70vh, calc(100dvh - var(--safe-top) - 96px));
 }
 
 body::before {
@@ -188,5 +239,12 @@ button {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
+  }
+}
+
+@media (max-width: 359px) {
+  :root {
+    --app-gutter: 14px;
+    --app-top-space: 18px;
   }
 }

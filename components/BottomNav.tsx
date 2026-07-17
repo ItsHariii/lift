@@ -45,7 +45,7 @@ export default function BottomNav() {
   const logActive = path === "/";
 
   return (
-    <nav className="fixed inset-x-0 bottom-0 z-40 px-4 pb-[calc(14px+env(safe-area-inset-bottom))]">
+    <nav className="safe-fixed-inline fixed inset-x-0 bottom-0 z-40 pb-[calc(14px+var(--safe-bottom))]">
       <div className="relative mx-auto flex max-w-[440px] items-end justify-between rounded-[22px] border border-line bg-[rgba(28,24,17,.94)] px-[10px] py-2 shadow-[0_-10px_44px_-14px_rgba(0,0,0,.85)] backdrop-blur-[18px]">
         {items.slice(0, 2).map((item) => (
           <Tab key={item.href} item={item} active={isActive(item.href)} />

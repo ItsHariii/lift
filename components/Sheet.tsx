@@ -35,7 +35,7 @@ export default function Sheet({
         onClick={onClose}
         className="absolute inset-0 border-0 bg-[rgba(6,5,3,.72)] backdrop-blur-sm"
       />
-      <section className="animate-rise relative mx-auto w-full max-w-[440px] rounded-t-[26px] border-t border-line bg-surface pb-[max(18px,env(safe-area-inset-bottom))]">
+      <section className="sheet-panel animate-rise relative mx-auto w-full max-w-[440px] rounded-t-[26px] border-t border-line bg-surface">
         <header className="flex items-center justify-between px-5 pb-2 pt-[18px]">
           {title && (
             <h2 className="display text-2xl tracking-[0.02em] uppercase">
@@ -49,7 +49,7 @@ export default function Sheet({
             Close
           </button>
         </header>
-        <div className="max-h-[70vh] overflow-y-auto px-5 pb-2 pt-2 no-scrollbar">
+        <div className="sheet-scroll overflow-y-auto px-5 pb-2 pt-2 no-scrollbar">
           {children}
         </div>
       </section>

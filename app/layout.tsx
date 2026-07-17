@@ -55,7 +55,7 @@ export default function RootLayout({
     >
       <body className="min-h-full">
         <Boot />
-        <main className="relative z-[1] mx-auto min-h-screen w-full max-w-[440px] px-[18px] pb-[132px] pt-[22px] no-scrollbar">
+        <main className="app-shell relative z-[1] mx-auto w-full max-w-[440px] no-scrollbar">
           {children}
         </main>
         <BottomNav />

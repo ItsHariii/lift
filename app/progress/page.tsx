@@ -87,7 +87,7 @@ export default function ProgressPage() {
     <div className="animate-rise">
       <PageHeader title="Stats" />
 
-      <div className="-mx-[18px] mb-4 flex gap-2 overflow-x-auto px-[18px] no-scrollbar">
+      <div className="app-bleed mb-4 flex gap-2 overflow-x-auto no-scrollbar">
         {options.map((option) => (
           <button
             key={option.id}

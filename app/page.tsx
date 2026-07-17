@@ -102,7 +102,7 @@ export default function LogPage() {
       <div className="animate-rise">
         <div className="mb-[30px] flex items-end justify-between">
           <div>
-            <h1 className="display text-[66px] leading-[0.8] tracking-[0.005em]">
+            <h1 className="display text-[clamp(58px,15.3vw,66px)] leading-[0.8] tracking-[0.005em]">
               LIFT
             </h1>
             <div className="mt-3 h-1.5 w-[104px] rounded-sm bg-accent" />
@@ -120,7 +120,7 @@ export default function LogPage() {
           </span>
           <div className="relative">
             <div className="label">No active session</div>
-            <h2 className="display mt-3 text-[52px] leading-[0.86]">
+            <h2 className="display mt-3 text-[clamp(46px,12vw,52px)] leading-[0.86]">
               TIME TO
               <br />
               <span className="text-accent">WORK.</span>
@@ -176,13 +176,13 @@ export default function LogPage() {
     <div>
       <PRToast pr={pr} />
 
-      <header className="sticky top-0 z-20 -mx-[18px] -mt-[22px] mb-3.5 border-b border-line bg-[rgba(19,17,12,.86)] px-[18px] pb-[13px] pt-4 backdrop-blur-2xl">
+      <header className="app-bleed active-session-header sticky z-20 mb-3.5 border-b border-line bg-[rgba(19,17,12,.86)] pb-[13px] pt-4 backdrop-blur-2xl">
         <div className="flex items-end justify-between">
           <div>
             <div className="label tracking-[0.18em]">
               {active.routineName ?? "Freestyle"} · {totalSets} sets
             </div>
-            <div className="display text-[46px] leading-[0.82] tracking-[0.02em] tabular-nums">
+            <div className="display text-[clamp(40px,10.7vw,46px)] leading-[0.82] tracking-[0.02em] tabular-nums">
               {elapsed}
             </div>
           </div>

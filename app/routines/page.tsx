@@ -158,7 +158,7 @@ function RoutineEditor({
         value={name}
         onChange={(event) => setName(event.target.value)}
         placeholder="Plan name (e.g. Push Day)"
-        className="mb-3 w-full rounded-[14px] border border-line bg-bg-2 px-4 py-3.5 text-[15px] text-text outline-none placeholder:text-text-faint focus:border-accent"
+        className="mb-3 w-full rounded-[14px] border border-line bg-bg-2 px-4 py-3.5 text-base text-text outline-none placeholder:text-text-faint focus:border-accent"
       />
 
       <div className="flex max-h-[40vh] flex-col gap-2 overflow-y-auto no-scrollbar">
