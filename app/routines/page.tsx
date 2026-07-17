@@ -153,7 +153,30 @@ function RoutineEditor({
   };
 
   return (
-    <Sheet open onClose={onClose} title={routine ? "Edit Plan" : "New Plan"}>
+    <Sheet
+      open
+      onClose={onClose}
+      title={routine ? "Edit Plan" : "New Plan"}
+      footer={
+        <div className="flex gap-2">
+          {routine && (
+            <button
+              onClick={remove}
+              className="rounded-[14px] border border-[rgba(255,87,71,.4)] bg-transparent px-[18px] py-3.5 font-bold text-danger active:bg-[rgba(255,87,71,.1)]"
+            >
+              Delete
+            </button>
+          )}
+          <button
+            onClick={save}
+            disabled={ids.length === 0}
+            className="display flex-1 rounded-[14px] border-0 bg-accent py-3.5 text-lg tracking-[0.05em] text-[#1a1206] disabled:opacity-40 active:scale-[0.99]"
+          >
+            SAVE PLAN
+          </button>
+        </div>
+      }
+    >
       <input
         value={name}
         onChange={(event) => setName(event.target.value)}
@@ -161,7 +184,7 @@ function RoutineEditor({
         className="mb-3 w-full rounded-[14px] border border-line bg-bg-2 px-4 py-3.5 text-base text-text outline-none placeholder:text-text-faint focus:border-accent"
       />
 
-      <div className="flex max-h-[40vh] flex-col gap-2 overflow-y-auto no-scrollbar">
+      <div className="flex flex-col gap-2">
         {ids.map((id, index) => (
           <div
             key={id}
@@ -190,24 +213,6 @@ function RoutineEditor({
       >
         + ADD EXERCISE
       </button>
-
-      <div className="mt-4 flex gap-2">
-        {routine && (
-          <button
-            onClick={remove}
-            className="rounded-[14px] border border-[rgba(255,87,71,.4)] bg-transparent px-[18px] py-3.5 font-bold text-danger active:bg-[rgba(255,87,71,.1)]"
-          >
-            Delete
-          </button>
-        )}
-        <button
-          onClick={save}
-          disabled={ids.length === 0}
-          className="display flex-1 rounded-[14px] border-0 bg-accent py-3.5 text-lg tracking-[0.05em] text-[#1a1206] disabled:opacity-40 active:scale-[0.99]"
-        >
-          SAVE PLAN
-        </button>
-      </div>
 
       <ExercisePicker
         open={pickerOpen}

@@ -108,12 +108,23 @@ body {
 }
 
 .sheet-panel {
-  max-height: calc(100dvh - var(--safe-top) - 12px);
+  display: flex;
+  flex-direction: column;
+  max-height: min(86dvh, calc(100dvh - var(--safe-top) - 8px));
   padding-bottom: max(18px, var(--safe-bottom));
 }
 
 .sheet-scroll {
-  max-height: min(70vh, calc(100dvh - var(--safe-top) - 96px));
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+}
+
+.sheet-frame {
+  padding-top: max(8px, var(--safe-top));
+  padding-right: var(--safe-right);
+  padding-left: var(--safe-left);
 }
 
 body::before {
