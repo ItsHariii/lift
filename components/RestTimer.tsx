@@ -50,7 +50,9 @@ export default function RestTimer({
       <div className="mx-auto max-w-[440px]">
         <div
           className={`relative flex items-center gap-3 overflow-hidden rounded-[18px] border bg-[rgba(28,24,17,.96)] px-3 py-[11px] backdrop-blur-[14px] ${
-            done ? "border-accent glow" : "border-line"
+            done
+              ? "border-accent animate-[glowPulse_1.3s_ease-in-out_infinite]"
+              : "border-line"
           }`}
         >
           <div className="relative flex-1">

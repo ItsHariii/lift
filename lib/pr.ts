@@ -7,13 +7,18 @@ export const rmKey = (exerciseId: string, reps: number) =>
 export interface LogResult {
   set: WorkoutSet;
   isPR: boolean;
-  /** previous best weight (kg) at this rep count, if any */
+  /** previous all-time best weight (kg) for this exercise, if any */
   prevBestKg?: number;
 }
 
+const EPS = 1e-6;
+
 /**
- * Log a set. A set is a PR when its weight beats the previous best weight
- * recorded at that exact rep count (rep-max model — no 1RM estimation).
+ * Log a set. A set is a PR only when it beats the exercise's all-time best:
+ * strictly heavier than any previous set, or the same top weight for more
+ * reps than ever done at (or above) that weight. Dropping the weight to hit
+ * a new rep count is NOT a PR. The very first set of an exercise sets the
+ * baseline and counts as a PR.
  */
 export async function logSet(input: {
   workoutId: string;
@@ -24,8 +29,32 @@ export async function logSet(input: {
 }): Promise<LogResult> {
   const key = rmKey(input.exerciseId, input.reps);
   return db.transaction("rw", db.sets, db.repMaxes, async () => {
-    const prev = await db.repMaxes.get(key);
-    const isPR = !prev || input.weightKg > prev.bestWeightKg + 1e-6;
+    const rows = await db.repMaxes
+      .where("exerciseId")
+      .equals(input.exerciseId)
+      .toArray();
+
+    let isPR: boolean;
+    let prevBestKg: number | undefined;
+    if (rows.length === 0) {
+      isPR = true;
+    } else {
+      const bestKg = Math.max(...rows.map((row) => row.bestWeightKg));
+      prevBestKg = bestKg;
+      if (input.weightKg > bestKg + EPS) {
+        isPR = true;
+      } else if (input.weightKg < bestKg - EPS) {
+        isPR = false;
+      } else {
+        // Same top weight: PR only if more reps than ever done at ≥ this weight.
+        const maxReps = Math.max(
+          ...rows
+            .filter((row) => row.bestWeightKg >= input.weightKg - EPS)
+            .map((row) => row.reps),
+        );
+        isPR = input.reps > maxReps;
+      }
+    }
 
     const set: WorkoutSet = {
       id: uid(),
@@ -39,7 +68,10 @@ export async function logSet(input: {
     };
     await db.sets.add(set);
 
-    if (isPR) {
+    // Keep the per-rep-count cache accurate regardless of PR celebration,
+    // so the Stats rep-max table stays correct.
+    const prevRow = rows.find((row) => row.key === key);
+    if (!prevRow || input.weightKg > prevRow.bestWeightKg + EPS) {
       const rm: RepMax = {
         key,
         exerciseId: input.exerciseId,
@@ -51,7 +83,7 @@ export async function logSet(input: {
       await db.repMaxes.put(rm);
     }
 
-    return { set, isPR, prevBestKg: prev?.bestWeightKg };
+    return { set, isPR, prevBestKg };
   });
 }
 

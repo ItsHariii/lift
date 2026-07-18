@@ -66,7 +66,7 @@ export default function Sheet({
           onClick={onClose}
           className="absolute inset-0 border-0 bg-[rgba(6,5,3,.72)] backdrop-blur-sm"
         />
-        <section className="sheet-panel animate-rise relative mx-auto w-full max-w-[440px] rounded-t-[26px] border-t border-line bg-surface">
+        <section className="sheet-panel relative mx-auto w-full max-w-[440px] rounded-t-[26px] border-t border-line bg-surface animate-[sheetUp_.34s_cubic-bezier(.22,1,.36,1)_both]">
           <header className="flex shrink-0 items-center justify-between px-5 pb-2 pt-[18px]">
             {title && (
               <h2 className="display text-2xl tracking-[0.02em] uppercase">

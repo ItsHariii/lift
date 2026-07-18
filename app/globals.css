@@ -146,6 +146,12 @@ input {
 
 button {
   cursor: pointer;
+  transition:
+    color 0.14s ease,
+    background-color 0.14s ease,
+    border-color 0.14s ease,
+    opacity 0.14s ease,
+    transform 0.1s ease;
 }
 
 ::selection {
@@ -209,6 +215,16 @@ button {
   to { transform: translateY(0); opacity: 1; }
 }
 
+@keyframes sheetUp {
+  from { transform: translateY(48px); opacity: 0.4; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+@keyframes glowPulse {
+  0%, 100% { box-shadow: 0 0 0 1px var(--accent), 0 0 22px -8px var(--accent-glow); }
+  50% { box-shadow: 0 0 0 2px var(--accent), 0 0 34px -4px var(--accent-glow); }
+}
+
 @keyframes stampIn {
   0% { transform: scale(1.6) rotate(-9deg); opacity: 0; }
   55% { transform: scale(0.93) rotate(3deg); opacity: 1; }
@@ -220,9 +236,39 @@ button {
   100% { transform: scale(2.6); opacity: 0; }
 }
 
-@keyframes confetti {
-  0% { transform: translateY(-8px) rotate(0); opacity: 1; }
-  100% { transform: translateY(150px) rotate(340deg); opacity: 0; }
+@keyframes confettiFall {
+  0% { transform: translate3d(0, -10vh, 0) rotate(0deg); opacity: 0; }
+  6% { opacity: 1; }
+  82% { opacity: 1; }
+  100% {
+    transform: translate3d(var(--drift, 0px), 106vh, 0) rotate(var(--spin, 540deg));
+    opacity: 0;
+  }
+}
+
+.confetti-piece {
+  position: absolute;
+  top: 0;
+  border-radius: 1px;
+  pointer-events: none;
+  animation: confettiFall var(--fall-duration, 2s) linear var(--fall-delay, 0s) infinite;
+  will-change: transform;
+}
+
+.pr-weight {
+  background: linear-gradient(105deg, var(--gold) 38%, #fff6dc 50%, var(--gold) 62%);
+  background-size: 240% 100%;
+  background-position: 120% 0;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  filter: drop-shadow(0 0 22px var(--gold-glow));
+  animation: shimmer 2.3s ease-in-out 0.45s infinite;
+}
+
+@keyframes shimmer {
+  0% { background-position: 120% 0; }
+  55%, 100% { background-position: -120% 0; }
 }
 
 @keyframes drawline {

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState, useSyncExternalStore } from "react";
 import { useSettings, saveSettings } from "@/lib/hooks";
 import { downloadBackup, importBackup, clearAll } from "@/lib/backup";
 import { ensureSeeded } from "@/lib/seed";
@@ -10,19 +10,33 @@ import PageHeader from "@/components/PageHeader";
 
 const REST_OPTIONS = [60, 90, 120, 180, 240];
 
+function subscribeNotificationPermission(onChange: () => void) {
+  let status: PermissionStatus | null = null;
+  if (typeof navigator !== "undefined" && "permissions" in navigator) {
+    navigator.permissions
+      .query({ name: "notifications" })
+      .then((s) => {
+        status = s;
+        s.onchange = onChange;
+      })
+      .catch(() => {});
+  }
+  return () => {
+    if (status) status.onchange = null;
+  };
+}
+
 export default function SettingsPage() {
   const settings = useSettings();
   const fileRef = useRef<HTMLInputElement>(null);
   const [message, setMessage] = useState<string | null>(null);
-  const [perm, setPerm] = useState<NotificationPermission | "unsupported">(
-    "default",
+  const perm = useSyncExternalStore(
+    subscribeNotificationPermission,
+    () => notificationPermission(),
+    () => "default" as const,
   );
   const [subJson, setSubJson] = useState<string | null>(null);
   const [subscribing, setSubscribing] = useState(false);
-
-  useEffect(() => {
-    setPerm(notificationPermission());
-  }, []);
 
   const flash = (nextMessage: string) => {
     setMessage(nextMessage);
@@ -34,7 +48,6 @@ export default function SettingsPage() {
     try {
       const json = await subscribeToNudges();
       setSubJson(json);
-      setPerm(notificationPermission());
       saveSettings({ nudgesEnabled: true });
       confirmBuzz();
       flash("Subscribed — copy the token below");
@@ -156,7 +169,7 @@ export default function SettingsPage() {
                   readOnly
                   value={subJson}
                   onFocus={(e) => e.currentTarget.select()}
-                  className="num h-24 w-full resize-none rounded-lg border border-line bg-bg-1 p-2 text-[10px] text-text-dim"
+                  className="num h-24 w-full resize-none rounded-lg border border-line bg-bg p-2 text-[10px] text-text-dim"
                 />
                 <button
                   onClick={copyToken}

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, type CSSProperties } from "react";
 
 export interface PRInfo {
   id: number;
@@ -8,14 +8,26 @@ export interface PRInfo {
   weight: string;
   unit: string;
   reps: number;
+  /** formatted previous best weight, only set when the weight itself went up */
+  prevBest?: string;
 }
 
-const confetti = Array.from({ length: 18 }, (_, index) => ({
-  left: `${5 + ((index * 37) % 90)}%`,
-  top: `${3 + ((index * 19) % 32)}%`,
-  color: index % 3 === 0 ? "var(--gold)" : index % 3 === 1 ? "var(--accent)" : "var(--text)",
-  delay: `${(index % 7) * 0.08}s`,
-  duration: `${0.9 + (index % 5) * 0.12}s`,
+const confetti = Array.from({ length: 28 }, (_, index) => ({
+  left: `${(index * 41) % 100}%`,
+  width: index % 4 === 0 ? 7 : 4,
+  height: 7 + ((index * 13) % 8),
+  color:
+    index % 4 === 0
+      ? "var(--gold)"
+      : index % 4 === 1
+        ? "var(--accent)"
+        : index % 4 === 2
+          ? "var(--gold-2)"
+          : "var(--text)",
+  delay: `${((index * 173) % 150) / 100}s`,
+  duration: `${1.7 + ((index * 89) % 100) / 80}s`,
+  drift: `${((index * 67) % 130) - 65}px`,
+  spin: `${420 + ((index * 131) % 420)}deg`,
 }));
 
 export default function PRToast({ pr }: { pr: PRInfo | null }) {
@@ -23,7 +35,7 @@ export default function PRToast({ pr }: { pr: PRInfo | null }) {
 
   useEffect(() => {
     if (!pr) return;
-    const timeout = setTimeout(() => setDismissedId(pr.id), 4200);
+    const timeout = setTimeout(() => setDismissedId(pr.id), 4600);
     return () => clearTimeout(timeout);
   }, [pr]);
 
@@ -40,19 +52,24 @@ export default function PRToast({ pr }: { pr: PRInfo | null }) {
           setDismissedId(pr.id);
         }
       }}
-      className="safe-modal-padding fixed inset-0 z-[60] flex items-center justify-center overflow-hidden bg-[rgba(8,6,3,.74)] backdrop-blur-[7px]"
+      className="safe-modal-padding fixed inset-0 z-[60] flex items-center justify-center overflow-hidden bg-[rgba(8,6,3,.78)] backdrop-blur-[7px]"
     >
       {confetti.map((piece, index) => (
         <span
           key={index}
-          className="pointer-events-none absolute h-2.5 w-1 animate-[confetti_1s_ease-in_both]"
-          style={{
-            left: piece.left,
-            top: piece.top,
-            background: piece.color,
-            animationDelay: piece.delay,
-            animationDuration: piece.duration,
-          }}
+          className="confetti-piece"
+          style={
+            {
+              left: piece.left,
+              width: piece.width,
+              height: piece.height,
+              background: piece.color,
+              "--fall-delay": piece.delay,
+              "--fall-duration": piece.duration,
+              "--drift": piece.drift,
+              "--spin": piece.spin,
+            } as CSSProperties
+          }
         />
       ))}
       <div className="relative w-full max-w-[330px] text-center animate-[stampIn_.52s_cubic-bezier(.22,1,.36,1)_both]">
@@ -67,12 +84,17 @@ export default function PRToast({ pr }: { pr: PRInfo | null }) {
           <h2 className="mt-3 text-[19px] font-black uppercase tracking-[0.01em]">
             {pr.exercise}
           </h2>
-          <div className="display mt-3.5 text-[clamp(72px,21vw,92px)] leading-[0.8] tracking-[0.01em] text-gold [text-shadow:0_0_28px_var(--gold-glow)]">
+          <div className="display pr-weight mt-3.5 text-[clamp(72px,21vw,92px)] leading-[0.8] tracking-[0.01em]">
             {pr.weight}
           </div>
           <div className="num mt-2 text-sm font-medium tracking-[0.1em] text-text-dim">
             {pr.unit} · {pr.reps} reps
           </div>
+          {pr.prevBest && (
+            <div className="num mt-1.5 text-[11px] tracking-[0.14em] text-text-faint">
+              PREV BEST {pr.prevBest} {pr.unit} ↑
+            </div>
+          )}
           <div className="label mt-5">Tap to continue</div>
         </div>
       </div>

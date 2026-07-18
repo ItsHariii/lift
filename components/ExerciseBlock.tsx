@@ -81,12 +81,17 @@ export default function ExerciseBlock({
     });
     if (result.isPR) {
       celebrate();
+      const beatWeight =
+        result.prevBestKg != null && weightKg > result.prevBestKg + 1e-6;
       onLogged({
         id: Date.now(),
         exercise: name,
         weight: fmtWeight(weightKg, unit),
         unit,
         reps,
+        prevBest: beatWeight
+          ? fmtWeight(result.prevBestKg!, unit)
+          : undefined,
       });
       return;
     }
