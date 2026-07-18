@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useLiveQuery } from "dexie-react-hooks";
 import { db } from "@/lib/db";
-import { logSet, deleteSet, lastSetFor } from "@/lib/pr";
+import { logSet, deleteSet, lastSetFor, lastSessionFor } from "@/lib/pr";
 import {
   fromKg,
   toKg,
@@ -58,6 +58,10 @@ export default function ExerciseBlock({
       : clean(fromKg(defaultWeightKg, unit)),
   );
   const [reps, setReps] = useState(defaultReps ?? 8);
+  const lastSession = useLiveQuery(
+    () => lastSessionFor(exerciseId, workoutId),
+    [exerciseId, workoutId],
+  );
   const primed = useRef(false);
 
   useEffect(() => {
@@ -118,6 +122,23 @@ export default function ExerciseBlock({
           </svg>
         </button>
       </div>
+
+      {lastSession && (
+        <div className="mt-2.5 flex items-baseline gap-2 overflow-x-auto no-scrollbar px-4">
+          <span className="num shrink-0 text-[10px] font-semibold uppercase tracking-[0.14em] text-text-faint">
+            Last ·{" "}
+            {new Date(lastSession.date).toLocaleDateString(undefined, {
+              month: "short",
+              day: "numeric",
+            })}
+          </span>
+          <span className="num whitespace-nowrap text-xs text-text-dim">
+            {lastSession.sets
+              .map((set) => `${fmtWeight(set.weightKg, unit)}×${set.reps}`)
+              .join(" · ")}
+          </span>
+        </div>
+      )}
 
       {(sets?.length ?? 0) > 0 && (
         <div className="mt-3 flex flex-col gap-0.5 px-3">

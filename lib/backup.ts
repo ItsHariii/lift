@@ -7,6 +7,7 @@ const TABLES = [
   "routines",
   "repMaxes",
   "settings",
+  "bodyweight",
 ] as const;
 
 export interface Backup {

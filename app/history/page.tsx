@@ -6,11 +6,13 @@ import {
   getFinishedSummaries,
   currentStreak,
   buildHeatmap,
+  weeklyMuscleVolume,
   type WorkoutSummary,
 } from "@/lib/stats";
 import { useSettings, useExerciseMap } from "@/lib/hooks";
 import { fmtWeight, fromKg } from "@/lib/units";
 import PageHeader from "@/components/PageHeader";
+import { MuscleVolumeChart, GROUP_COLORS } from "@/components/ProgressChart";
 
 export default function HistoryPage() {
   const summaries = useLiveQuery(() => getFinishedSummaries(), [], undefined);
@@ -23,6 +25,18 @@ export default function HistoryPage() {
 
   const streak = currentStreak(summaries);
   const heat = buildHeatmap(summaries);
+  const weekly = weeklyMuscleVolume(
+    summaries,
+    (id) => exMap?.get(id)?.muscleGroup ?? "Other",
+  );
+  const weeklyData = weekly.weeks.map((week) => {
+    const row: Record<string, number | string> = { label: week.label };
+    for (const group of weekly.groups) {
+      row[group] = Math.round(fromKg(week.byGroup[group] ?? 0, settings.unit));
+    }
+    return row;
+  });
+  const hasWeeklyVolume = weekly.weeks.some((week) => week.totalKg > 0);
   const totalVolumeKg = summaries.reduce(
     (total, summary) => total + summary.volumeKg,
     0,
@@ -64,6 +78,36 @@ export default function HistoryPage() {
           ))}
         </div>
       </section>
+
+      {hasWeeklyVolume && (
+        <section className="mt-3 rounded-[18px] border border-line bg-surface p-4">
+          <div className="mb-2 flex items-center justify-between">
+            <span className="label">Weekly volume · muscle</span>
+            <span className="num text-[11px] text-text-faint">{settings.unit}</span>
+          </div>
+          <MuscleVolumeChart
+            data={weeklyData}
+            groups={weekly.groups}
+            unit={settings.unit}
+          />
+          <div className="mt-2.5 flex flex-wrap gap-x-3 gap-y-1.5">
+            {weekly.groups.map((group, index) => (
+              <span
+                key={group}
+                className="num flex items-center gap-1.5 text-[10px] uppercase tracking-[0.1em] text-text-dim"
+              >
+                <span
+                  className="h-2 w-2 rounded-[3px]"
+                  style={{
+                    background: GROUP_COLORS[index % GROUP_COLORS.length],
+                  }}
+                />
+                {group}
+              </span>
+            ))}
+          </div>
+        </section>
+      )}
 
       <div className="mt-[22px] flex flex-col gap-2.5">
         {summaries.length === 0 && (

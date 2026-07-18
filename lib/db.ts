@@ -58,10 +58,19 @@ export interface Settings {
   id: "app";
   unit: Unit;
   restSeconds: number;
+  /** Latest logged bodyweight (mirror of the newest bodyweight entry). */
   bodyweightKg?: number;
   autoRest: boolean;
   /** UI reflection of push-nudge opt-in (delivery is server-driven). */
   nudgesEnabled?: boolean;
+}
+
+export interface BodyweightEntry {
+  id: string;
+  /** ISO date-time the weigh-in was logged */
+  date: string;
+  /** canonical kilograms */
+  weightKg: number;
 }
 
 export class LiftDB extends Dexie {
@@ -71,6 +80,7 @@ export class LiftDB extends Dexie {
   routines!: Table<Routine, string>;
   repMaxes!: Table<RepMax, string>;
   settings!: Table<Settings, string>;
+  bodyweight!: Table<BodyweightEntry, string>;
 
   constructor() {
     super("lift");
@@ -81,6 +91,9 @@ export class LiftDB extends Dexie {
       routines: "id, name, createdAt",
       repMaxes: "key, exerciseId, reps",
       settings: "id",
+    });
+    this.version(2).stores({
+      bodyweight: "id, date",
     });
   }
 }

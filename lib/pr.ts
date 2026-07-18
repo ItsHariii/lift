@@ -136,6 +136,43 @@ export async function lastSetFor(
   return sets[0];
 }
 
+export interface LastSession {
+  /** startedAt of the workout the sets came from (falls back to first set time) */
+  date: string;
+  sets: WorkoutSet[];
+}
+
+/**
+ * Sets from the most recent *previous* workout containing this exercise
+ * (excluding the given in-progress workout). Drives the "last session" ghost.
+ */
+export async function lastSessionFor(
+  exerciseId: string,
+  excludeWorkoutId: string,
+): Promise<LastSession | undefined> {
+  const sets = await db.sets
+    .where("exerciseId")
+    .equals(exerciseId)
+    .toArray();
+  const byWorkout = new Map<string, WorkoutSet[]>();
+  for (const s of sets) {
+    if (s.workoutId === excludeWorkoutId) continue;
+    if (!byWorkout.has(s.workoutId)) byWorkout.set(s.workoutId, []);
+    byWorkout.get(s.workoutId)!.push(s);
+  }
+  if (byWorkout.size === 0) return undefined;
+
+  let best: WorkoutSet[] | undefined;
+  for (const group of byWorkout.values()) {
+    group.sort((a, b) => a.createdAt.localeCompare(b.createdAt));
+    if (!best || group[0].createdAt > best[0].createdAt) best = group;
+  }
+  if (!best) return undefined;
+
+  const workout = await db.workouts.get(best[0].workoutId);
+  return { date: workout?.startedAt ?? best[0].createdAt, sets: best };
+}
+
 /** Full rep-max table for an exercise, sorted by reps ascending. */
 export async function repMaxTable(exerciseId: string): Promise<RepMax[]> {
   const rows = await db.repMaxes

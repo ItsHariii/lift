@@ -1,18 +1,22 @@
 "use client";
 
-import { useDeferredValue, useMemo, useState } from "react";
+import { useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
 import { useLiveQuery } from "dexie-react-hooks";
 import {
+  dayKey,
   exerciseIdsWithData,
   exerciseSeries,
   type ExercisePoint,
 } from "@/lib/stats";
 import { repMaxTable } from "@/lib/pr";
+import { bodyweightSeries, logBodyweight } from "@/lib/bodyweight";
 import { useSettings, useExerciseMap } from "@/lib/hooks";
-import { fmtWeight, fromKg } from "@/lib/units";
+import { clean, fmtWeight, fromKg, toKg, type Unit } from "@/lib/units";
+import { confirmBuzz } from "@/lib/haptics";
 import type { RepMax } from "@/lib/db";
 import PageHeader from "@/components/PageHeader";
 import Sheet from "@/components/Sheet";
+import Stepper from "@/components/Stepper";
 import { WeightChart, VolumeChart } from "@/components/ProgressChart";
 
 interface ExerciseOption {
@@ -69,6 +73,10 @@ export default function ProgressPage() {
     [currentSelected],
     [] as RepMax[],
   );
+  const bodyweights = useLiveQuery(() => bodyweightSeries(), [], undefined);
+  const latestBw = bodyweights?.length
+    ? bodyweights[bodyweights.length - 1]
+    : undefined;
 
   if (ids === undefined) {
     return <div className="pt-20 text-center text-text-faint">Loading...</div>;
@@ -78,9 +86,13 @@ export default function ProgressPage() {
     return (
       <div className="animate-rise">
         <PageHeader title="Stats" />
-        <div className="rounded-[18px] border border-line bg-surface p-8 text-center text-text-faint">
+        <div className="mb-3 rounded-[18px] border border-line bg-surface p-8 text-center text-text-faint">
           Log some sets and your progress charts show up here.
         </div>
+        <BodyweightSection
+          entries={bodyweights ?? []}
+          unit={settings.unit}
+        />
       </div>
     );
   }
@@ -170,6 +182,11 @@ export default function ProgressPage() {
                 × {topRecord.reps}
               </span>
             </div>
+            {latestBw && (
+              <div className="num mt-2.5 text-[11px] uppercase tracking-[0.14em] text-text-faint">
+                {(topRecord.bestWeightKg / latestBw.weightKg).toFixed(2)}× bodyweight
+              </div>
+            )}
           </div>
         </section>
       )}
@@ -192,7 +209,7 @@ export default function ProgressPage() {
         )}
       </ChartCard>
 
-      <section className="overflow-hidden rounded-[18px] border border-line bg-surface">
+      <section className="mb-3 overflow-hidden rounded-[18px] border border-line bg-surface">
         <div className="label px-4 pb-1 pt-4">Rep-max records</div>
         {sortedRecords.map((record) => (
           <div
@@ -211,6 +228,8 @@ export default function ProgressPage() {
         ))}
       </section>
 
+      <BodyweightSection entries={bodyweights ?? []} unit={unit} />
+
       <StatsExercisePicker
         open={pickerOpen}
         options={options}
@@ -222,6 +241,93 @@ export default function ProgressPage() {
         }}
       />
     </div>
+  );
+}
+
+function BodyweightSection({
+  entries,
+  unit,
+}: {
+  entries: { id: string; date: string; weightKg: number }[];
+  unit: Unit;
+}) {
+  const latest = entries.length ? entries[entries.length - 1] : undefined;
+  const [weight, setWeight] = useState(unit === "kg" ? 75 : 165);
+  const [saved, setSaved] = useState(false);
+  const primed = useRef(false);
+
+  useEffect(() => {
+    if (primed.current || !latest) return;
+    primed.current = true;
+    setWeight(clean(fromKg(latest.weightKg, unit)));
+  }, [latest, unit]);
+
+  const loggedToday = latest && dayKey(latest.date) === dayKey(new Date());
+
+  const log = async () => {
+    await logBodyweight(toKg(weight, unit));
+    confirmBuzz();
+    setSaved(true);
+    setTimeout(() => setSaved(false), 1600);
+  };
+
+  const chartData = entries.map((entry) => ({
+    label: dayKey(entry.date).slice(5),
+    value: clean(fromKg(entry.weightKg, unit)),
+  }));
+
+  return (
+    <section className="rounded-[18px] border border-line bg-surface p-4">
+      <div className="mb-2 flex items-center justify-between">
+        <span className="label">Bodyweight</span>
+        {latest && (
+          <span className="num text-[11px] text-text-faint">
+            {loggedToday ? "logged today" : `last · ${dayKey(latest.date)}`}
+          </span>
+        )}
+      </div>
+
+      {latest && (
+        <div className="mb-3 flex items-baseline gap-1.5">
+          <span className="display text-[38px] leading-[0.85]">
+            {fmtWeight(latest.weightKg, unit)}
+          </span>
+          <span className="num text-[10px] uppercase tracking-[0.14em] text-text-faint">
+            {unit}
+          </span>
+        </div>
+      )}
+
+      {chartData.length > 1 && (
+        <div className="mb-3">
+          <WeightChart
+            data={chartData}
+            unit={unit}
+            color="#f2b53c"
+            gradientId="bwfill"
+            decimals={1}
+            domain={["auto", "auto"]}
+          />
+        </div>
+      )}
+
+      <div className="flex items-end gap-2.5">
+        <Stepper
+          label={`Weigh-in · ${unit}`}
+          value={weight}
+          onChange={setWeight}
+          step={unit === "kg" ? 0.1 : 0.2}
+          decimals={1}
+          min={1}
+        />
+        <button
+          onClick={log}
+          className="accent-button display shrink-0 rounded-[14px] border-0 px-5 py-3.5 text-lg tracking-[0.06em] active:scale-[0.99]"
+        >
+          {saved ? "SAVED" : "LOG"}
+        </button>
+      </div>
+    </section>
   );
 }
 

@@ -103,6 +103,68 @@ export function buildHeatmap(
   return cols;
 }
 
+export interface WeekVolume {
+  /** e.g. "Jul 13" — Sunday the week starts on */
+  label: string;
+  /** volume kg per muscle group */
+  byGroup: Record<string, number>;
+  totalKg: number;
+}
+
+/**
+ * Weekly tonnage split by muscle group for the last `weeks` weeks
+ * (oldest→newest, Sunday-aligned like the heatmap). `groups` is every
+ * muscle group seen, ordered by total volume descending.
+ */
+export function weeklyMuscleVolume(
+  summaries: WorkoutSummary[],
+  groupOf: (exerciseId: string) => string,
+  weeks = 8,
+): { weeks: WeekVolume[]; groups: string[] } {
+  const weekStart = (d: Date) => {
+    const s = new Date(d);
+    s.setHours(0, 0, 0, 0);
+    s.setDate(s.getDate() - s.getDay());
+    return s;
+  };
+
+  const start = weekStart(new Date());
+  start.setDate(start.getDate() - (weeks - 1) * 7);
+
+  const buckets: WeekVolume[] = [];
+  for (let w = 0; w < weeks; w++) {
+    const d = new Date(start);
+    d.setDate(start.getDate() + w * 7);
+    buckets.push({
+      label: d.toLocaleDateString(undefined, { month: "short", day: "numeric" }),
+      byGroup: {},
+      totalKg: 0,
+    });
+  }
+
+  const groupTotals = new Map<string, number>();
+  for (const summary of summaries) {
+    const started = new Date(summary.workout.startedAt);
+    const index = Math.floor(
+      (weekStart(started).getTime() - start.getTime()) / (7 * 86400000),
+    );
+    if (index < 0 || index >= weeks) continue;
+    for (const [exerciseId, sets] of summary.byExercise) {
+      const group = groupOf(exerciseId);
+      const volume = sets.reduce((a, s) => a + s.weightKg * s.reps, 0);
+      const bucket = buckets[index];
+      bucket.byGroup[group] = (bucket.byGroup[group] ?? 0) + volume;
+      bucket.totalKg += volume;
+      groupTotals.set(group, (groupTotals.get(group) ?? 0) + volume);
+    }
+  }
+
+  const groups = [...groupTotals.entries()]
+    .sort((a, b) => b[1] - a[1])
+    .map(([g]) => g);
+  return { weeks: buckets, groups };
+}
+
 export interface ExercisePoint {
   date: string;
   label: string;
