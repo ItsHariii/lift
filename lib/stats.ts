@@ -56,15 +56,26 @@ export async function getFinishedSummaries(): Promise<WorkoutSummary[]> {
   });
 }
 
-/** Consecutive-day training streak ending today or yesterday. */
+/**
+ * Consecutive-day training streak. A single rest day is tolerated so it
+ * survives normal off-days; two missed days in a row ends the streak.
+ */
 export function currentStreak(summaries: WorkoutSummary[]): number {
   const days = new Set(summaries.map((s) => dayKey(s.workout.startedAt)));
+  if (days.size === 0) return 0;
+  // sortable YYYY-MM-DD keys — floor stops the loop at the earliest logged day
+  const earliest = [...days].sort()[0];
   let streak = 0;
+  let misses = 0;
   const cursor = new Date();
-  // allow streak to count if today not yet trained but yesterday was
-  if (!days.has(dayKey(cursor))) cursor.setDate(cursor.getDate() - 1);
-  while (days.has(dayKey(cursor))) {
-    streak++;
+  while (dayKey(cursor) >= earliest) {
+    if (days.has(dayKey(cursor))) {
+      streak++;
+      misses = 0;
+    } else {
+      misses++;
+      if (misses > 1) break; // two consecutive missed days ends the streak
+    }
     cursor.setDate(cursor.getDate() - 1);
   }
   return streak;

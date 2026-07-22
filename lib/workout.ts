@@ -10,6 +10,8 @@ export async function startWorkout(opts?: {
   routineId?: string;
   routineName?: string;
   exerciseIds?: string[];
+  startLat?: number;
+  startLng?: number;
 }): Promise<Workout> {
   const existing = await getActiveWorkout();
   if (existing) return existing;
@@ -19,6 +21,8 @@ export async function startWorkout(opts?: {
     routineId: opts?.routineId,
     routineName: opts?.routineName,
     exerciseIds: opts?.exerciseIds ?? [],
+    startLat: opts?.startLat,
+    startLng: opts?.startLng,
   };
   await db.workouts.add(w);
   return w;

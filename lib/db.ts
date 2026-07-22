@@ -21,6 +21,9 @@ export interface Workout {
   notes?: string;
   /** ordered exercise membership (survives reload even before sets logged) */
   exerciseIds?: string[];
+  /** location the session started at, for auto-end-when-you-leave */
+  startLat?: number;
+  startLng?: number;
 }
 
 export interface WorkoutSet {
@@ -63,6 +66,8 @@ export interface Settings {
   autoRest: boolean;
   /** UI reflection of push-nudge opt-in (delivery is server-driven). */
   nudgesEnabled?: boolean;
+  /** auto-finish a workout when you leave the location it started at */
+  autoEndOnLeave?: boolean;
 }
 
 export interface BodyweightEntry {

@@ -134,6 +134,21 @@ export default function SettingsPage() {
         />
       </Section>
 
+      <Section label="Auto-end · leave the gym">
+        <Toggle
+          label="Auto-finish when I leave (200m) or after 3h"
+          on={settings.autoEndOnLeave ?? false}
+          onToggle={() =>
+            saveSettings({ autoEndOnLeave: !settings.autoEndOnLeave })
+          }
+        />
+        <p className="mt-2 text-[11px] leading-snug text-text-faint">
+          Uses your location, checked every 10 min while the app is open and
+          when you reopen it — browsers can’t track location in the background.
+          The 3h cap works even without location.
+        </p>
+      </Section>
+
       <Section label="Diet reminders · toxic motivation">
         {perm === "unsupported" ? (
           <p className="rounded-[14px] border border-line bg-bg-2 px-4 py-3.5 text-sm text-text-dim">

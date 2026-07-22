@@ -14,6 +14,7 @@ import {
 } from "@/lib/units";
 import { confirmBuzz, celebrate } from "@/lib/haptics";
 import Stepper from "./Stepper";
+import PlateCalculator from "./PlateCalculator";
 import type { PRInfo } from "./PRToast";
 
 export default function ExerciseBlock({
@@ -58,6 +59,7 @@ export default function ExerciseBlock({
       : clean(fromKg(defaultWeightKg, unit)),
   );
   const [reps, setReps] = useState(defaultReps ?? 8);
+  const [platesOpen, setPlatesOpen] = useState(false);
   const lastSession = useLiveQuery(
     () => lastSessionFor(exerciseId, workoutId),
     [exerciseId, workoutId],
@@ -188,6 +190,20 @@ export default function ExerciseBlock({
         />
         <Stepper label="Reps" value={reps} onChange={setReps} step={1} min={1} />
       </div>
+
+      <button
+        onClick={() => setPlatesOpen(true)}
+        className="label mx-4 mt-2.5 flex w-[calc(100%-2rem)] items-center justify-center gap-1.5 rounded-[12px] border border-line bg-bg-2 py-2 tracking-[0.16em] text-text-dim active:border-accent active:text-accent"
+      >
+        ◔ Plates
+      </button>
+
+      <PlateCalculator
+        open={platesOpen}
+        onClose={() => setPlatesOpen(false)}
+        weight={weight}
+        unit={unit}
+      />
 
       <button
         onClick={doLog}

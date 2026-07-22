@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useLiveQuery } from "dexie-react-hooks";
-import { db, type Routine } from "@/lib/db";
+import { db, type Routine, type Workout } from "@/lib/db";
 import { useSettings, useExerciseMap } from "@/lib/hooks";
 import {
   getActiveWorkout,
@@ -12,6 +12,13 @@ import {
   finishWorkout,
   discardWorkout,
 } from "@/lib/workout";
+import {
+  captureLocation,
+  distanceM,
+  LEAVE_RADIUS_M,
+  MAX_SESSION_MS,
+  GEO_POLL_MS,
+} from "@/lib/geo";
 import { confirmBuzz } from "@/lib/haptics";
 import ExerciseBlock from "@/components/ExerciseBlock";
 import ExercisePicker from "@/components/ExercisePicker";
@@ -40,6 +47,53 @@ function useElapsed(startedAt?: string) {
     : `${pad(minutes)}:${pad(remainder)}`;
 }
 
+/**
+ * Auto-finish the active workout when the user leaves the start location
+ * (checked every 10 min while the app is open, and on reopen) or after a 3h
+ * cap. Location checks only run while the app is foreground — browsers can't
+ * read GPS in the background.
+ */
+function useAutoEnd(active: Workout | null | undefined, enabled: boolean) {
+  useEffect(() => {
+    if (!active) return;
+    const workoutId = active.id;
+    const startedAt = new Date(active.startedAt).getTime();
+    const start =
+      active.startLat != null && active.startLng != null
+        ? { lat: active.startLat, lng: active.startLng }
+        : null;
+    let cancelled = false;
+
+    const check = async () => {
+      if (cancelled) return;
+      // 3h cap — fires regardless of location/permission
+      if (Date.now() - startedAt > MAX_SESSION_MS) {
+        await finishWorkout(workoutId);
+        return;
+      }
+      if (!enabled || !start) return;
+      const here = await captureLocation();
+      if (cancelled || !here) return;
+      if (distanceM(start, here) > LEAVE_RADIUS_M) {
+        await finishWorkout(workoutId);
+      }
+    };
+
+    check();
+    const interval = setInterval(check, GEO_POLL_MS);
+    const onVisible = () => {
+      if (document.visibilityState === "visible") check();
+    };
+    document.addEventListener("visibilitychange", onVisible);
+
+    return () => {
+      cancelled = true;
+      clearInterval(interval);
+      document.removeEventListener("visibilitychange", onVisible);
+    };
+  }, [active, enabled]);
+}
+
 export default function LogPage() {
   const settings = useSettings();
   const exMap = useExerciseMap();
@@ -50,6 +104,7 @@ export default function LogPage() {
     undefined,
   );
   const elapsed = useElapsed(active?.startedAt);
+  useAutoEnd(active, settings.autoEndOnLeave ?? false);
   const [pickerOpen, setPickerOpen] = useState(false);
   const [restStart, setRestStart] = useState<number | null>(null);
   const [pr, setPr] = useState<PRInfo | null>(null);
@@ -68,15 +123,20 @@ export default function LogPage() {
 
   const startFreestyle = async () => {
     confirmBuzz();
-    await startWorkout();
+    const loc = settings.autoEndOnLeave ? await captureLocation() : null;
+    await startWorkout(
+      loc ? { startLat: loc.lat, startLng: loc.lng } : undefined,
+    );
   };
 
   const startRoutine = async (routine: Routine) => {
     confirmBuzz();
+    const loc = settings.autoEndOnLeave ? await captureLocation() : null;
     await startWorkout({
       routineId: routine.id,
       routineName: routine.name,
       exerciseIds: routine.exerciseIds,
+      ...(loc ? { startLat: loc.lat, startLng: loc.lng } : {}),
     });
   };
 
