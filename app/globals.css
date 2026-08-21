@@ -64,12 +64,12 @@ html {
     radial-gradient(130% 55% at 50% -12%, rgba(255, 91, 31, 0.1), transparent 62%),
     repeating-linear-gradient(90deg, var(--bg) 0, var(--bg) 43px, var(--bg-2) 43px, var(--bg-2) 44px),
     var(--bg);
-  background-repeat: no-repeat, repeat, no-repeat;
-  background-attachment: fixed;
+  background-repeat: no-repeat, repeat;
 }
 
 body {
-  height: 100%;
+  position: relative;
+  height: 100dvh;
   margin: 0;
   overflow: hidden;
   background: transparent;
@@ -82,9 +82,7 @@ body {
    chrome (bottom nav, rest timer) cannot drift and there is no rubber-band
    gutter to reveal a mismatched background. */
 .app-scroll {
-  position: fixed;
-  inset: 0;
-  z-index: 0;
+  height: 100%;
   overflow-x: hidden;
   overflow-y: auto;
   overscroll-behavior-y: none;
