@@ -60,33 +60,39 @@ html {
   overscroll-behavior: none;
   -webkit-text-size-adjust: 100%;
   text-size-adjust: 100%;
-  background:
-    radial-gradient(130% 55% at 50% -12%, rgba(255, 91, 31, 0.1), transparent 62%),
-    repeating-linear-gradient(90deg, var(--bg) 0, var(--bg) 43px, var(--bg-2) 43px, var(--bg-2) 44px),
-    var(--bg);
-  background-repeat: no-repeat, repeat;
+  background-color: var(--bg);
 }
 
 body {
-  position: relative;
-  height: 100dvh;
+  height: 100%;
   margin: 0;
   overflow: hidden;
-  background: transparent;
+  background-color: var(--bg);
   color: var(--text);
   font-family: var(--font-archivo), sans-serif;
   -webkit-font-smoothing: antialiased;
 }
 
-/* The only scroller in the app. The document itself never moves, so fixed
-   chrome (bottom nav, rest timer) cannot drift and there is no rubber-band
-   gutter to reveal a mismatched background. */
+/*
+ * The only scroller in the app, and the element that paints the background.
+ * `fixed; inset: 0` covers the whole visual viewport including the area behind
+ * the home indicator, which sits outside the html box and would otherwise show
+ * the bare dark canvas. Because the document itself never scrolls, fixed chrome
+ * (bottom nav, rest timer) cannot drift and there is no rubber-band gutter.
+ */
 .app-scroll {
-  height: 100%;
+  position: fixed;
+  inset: 0;
+  z-index: 0;
   overflow-x: hidden;
   overflow-y: auto;
   overscroll-behavior-y: none;
   -webkit-overflow-scrolling: touch;
+  background:
+    radial-gradient(130% 55% at 50% -12%, rgba(255, 91, 31, 0.1), transparent 62%),
+    repeating-linear-gradient(90deg, var(--bg) 0, var(--bg) 43px, var(--bg-2) 43px, var(--bg-2) 44px),
+    var(--bg);
+  background-repeat: no-repeat, repeat;
 }
 
 .app-shell {
