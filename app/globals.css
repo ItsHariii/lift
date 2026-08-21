@@ -60,25 +60,36 @@ html {
   overscroll-behavior: none;
   -webkit-text-size-adjust: 100%;
   text-size-adjust: 100%;
+  /*
+   * The background lives on the root so it propagates to the canvas, which is
+   * the only box guaranteed to paint the entire screen -- safe-area strips
+   * included. Painting it on an inner fixed element leaves the strip behind the
+   * status bar flat in an installed PWA. No `background-attachment: fixed`:
+   * that confines the propagated paint to the viewport rect and reintroduces
+   * the same gap.
+   */
   background-color: var(--bg);
+  background-image:
+    radial-gradient(130% 55% at 50% -12%, rgba(255, 91, 31, 0.1), transparent 62%),
+    repeating-linear-gradient(90deg, var(--bg) 0, var(--bg) 43px, var(--bg-2) 43px, var(--bg-2) 44px);
+  background-repeat: no-repeat, repeat;
 }
 
 body {
   height: 100%;
   margin: 0;
   overflow: hidden;
-  background-color: var(--bg);
+  /* transparent so the root background reaches the canvas */
+  background: transparent;
   color: var(--text);
   font-family: var(--font-archivo), sans-serif;
   -webkit-font-smoothing: antialiased;
 }
 
 /*
- * The only scroller in the app, and the element that paints the background.
- * `fixed; inset: 0` covers the whole visual viewport including the area behind
- * the home indicator, which sits outside the html box and would otherwise show
- * the bare dark canvas. Because the document itself never scrolls, fixed chrome
- * (bottom nav, rest timer) cannot drift and there is no rubber-band gutter.
+ * The only scroller in the app. Because the document itself never scrolls,
+ * fixed chrome (bottom nav, rest timer) cannot drift and there is no
+ * rubber-band gutter. Transparent: the root paints the background.
  */
 .app-scroll {
   position: fixed;
@@ -88,11 +99,6 @@ body {
   overflow-y: auto;
   overscroll-behavior-y: none;
   -webkit-overflow-scrolling: touch;
-  background:
-    radial-gradient(130% 55% at 50% -12%, rgba(255, 91, 31, 0.1), transparent 62%),
-    repeating-linear-gradient(90deg, var(--bg) 0, var(--bg) 43px, var(--bg-2) 43px, var(--bg-2) 44px),
-    var(--bg);
-  background-repeat: no-repeat, repeat;
 }
 
 .app-shell {
