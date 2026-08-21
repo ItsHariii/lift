@@ -29,7 +29,14 @@ export const metadata: Metadata = {
   manifest: "/manifest.webmanifest",
   appleWebApp: {
     capable: true,
-    statusBarStyle: "black-translucent",
+    /*
+     * NOT "black-translucent". That makes iOS size the standalone web view to
+     * (screen height - status bar) but anchor it at y=0, leaving a dead strip
+     * along the bottom that the page cannot paint or place anything in -- it
+     * renders over the app. "black" makes iOS position the frame below the
+     * status bar so its bottom meets the screen edge.
+     */
+    statusBarStyle: "black",
     title: "LIFT",
   },
 };
