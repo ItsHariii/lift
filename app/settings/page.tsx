@@ -242,7 +242,7 @@ export default function SettingsPage() {
       </p>
 
       {message && (
-        <div className="safe-fixed-inline fixed inset-x-0 bottom-[calc(104px+var(--safe-bottom))] z-[55] flex justify-center">
+        <div className="safe-fixed-inline dock-bottom z-[55] flex justify-center [--dock-offset:calc(104px+var(--safe-bottom))]">
           <div className="animate-pop rounded-full border border-line-bright bg-surface px-[22px] py-[11px] text-sm font-bold">
             {message}
           </div>

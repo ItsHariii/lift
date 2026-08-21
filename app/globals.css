@@ -93,12 +93,28 @@ body {
  */
 .app-scroll {
   position: fixed;
-  inset: 0;
-  z-index: 0;
+  top: 0;
+  right: 0;
+  left: 0;
+  height: 100dvh;
   overflow-x: hidden;
   overflow-y: auto;
   overscroll-behavior-y: none;
   -webkit-overflow-scrolling: touch;
+}
+
+/*
+ * Docks floating chrome to the bottom of the *dynamic* viewport. In an
+ * installed PWA the layout viewport can be shorter than the screen, so
+ * `bottom: 0` leaves a strip below the element; 100dvh always resolves to the
+ * full visible height. --dock-offset lifts an element above the nav.
+ */
+.dock-bottom {
+  position: fixed;
+  top: 100dvh;
+  right: 0;
+  left: 0;
+  transform: translateY(calc(-100% - var(--dock-offset, 0px)));
 }
 
 .app-shell {
@@ -151,6 +167,23 @@ body {
   padding-top: max(8px, var(--safe-top));
   padding-right: var(--safe-right);
   padding-left: var(--safe-left);
+}
+
+body::after {
+  position: fixed;
+  z-index: -1;
+  inset: -140px;
+  pointer-events: none;
+  content: "";
+  background-color: var(--bg);
+  background-image:
+    radial-gradient(130% 55% at 50% -12%, rgba(255, 91, 31, 0.1), transparent 62%),
+    repeating-linear-gradient(90deg, var(--bg) 0, var(--bg) 43px, var(--bg-2) 43px, var(--bg-2) 44px);
+  /* Keep the glow aligned to the real viewport while the stripes tile across
+     the whole bled box. */
+  background-repeat: no-repeat, repeat;
+  background-position: 140px 140px, 0 0;
+  background-size: calc(100% - 280px) calc(100% - 280px), auto;
 }
 
 body::before {
