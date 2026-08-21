@@ -63,26 +63,16 @@ html {
   overscroll-behavior: none;
   -webkit-text-size-adjust: 100%;
   text-size-adjust: 100%;
-  /*
-   * The background lives on the root so it propagates to the canvas, which is
-   * the only box guaranteed to paint the entire screen -- safe-area strips
-   * included. Painting it on an inner fixed element leaves the strip behind the
-   * status bar flat in an installed PWA. No `background-attachment: fixed`:
-   * that confines the propagated paint to the viewport rect and reintroduces
-   * the same gap.
-   */
+  /* Base colour only. WebKit paints a propagated canvas background over the
+     viewport rect alone, so the pattern goes on .app-scroll, which spans the
+     real screen. */
   background-color: var(--bg);
-  background-image:
-    radial-gradient(130% 55% at 50% -12%, rgba(255, 91, 31, 0.1), transparent 62%),
-    repeating-linear-gradient(90deg, var(--bg) 0, var(--bg) 43px, var(--bg-2) 43px, var(--bg-2) 44px);
-  background-repeat: no-repeat, repeat;
 }
 
 body {
   height: 100%;
   margin: 0;
   overflow: hidden;
-  /* transparent so the root background reaches the canvas */
   background: transparent;
   color: var(--text);
   font-family: var(--font-archivo), sans-serif;
@@ -90,9 +80,10 @@ body {
 }
 
 /*
- * The only scroller in the app. Because the document itself never scrolls,
- * fixed chrome (bottom nav, rest timer) cannot drift and there is no
- * rubber-band gutter. Transparent: the root paints the background.
+ * The only scroller in the app, and the element that paints the background.
+ * Because the document itself never scrolls, fixed chrome cannot drift and
+ * there is no rubber-band gutter. Sized past the viewport by
+ * --viewport-shortfall so it covers the full screen on iOS standalone.
  */
 .app-scroll {
   position: fixed;
@@ -104,13 +95,18 @@ body {
   overflow-y: auto;
   overscroll-behavior-y: none;
   -webkit-overflow-scrolling: touch;
+  background:
+    radial-gradient(130% 55% at 50% -12%, rgba(255, 91, 31, 0.1), transparent 62%),
+    repeating-linear-gradient(90deg, var(--bg) 0, var(--bg) 43px, var(--bg-2) 43px, var(--bg-2) 44px),
+    var(--bg);
+  background-repeat: no-repeat, repeat;
 }
 
 /*
- * Docks floating chrome to the bottom of the *dynamic* viewport. In an
- * installed PWA the layout viewport can be shorter than the screen, so
- * `bottom: 0` leaves a strip below the element; 100dvh always resolves to the
- * full visible height. --dock-offset lifts an element above the nav.
+ * Docks floating chrome to the real bottom of the screen. In an installed iOS
+ * web app the viewport is shorter than the screen, so `bottom: 0` strands the
+ * element above a dead strip; adding --viewport-shortfall closes it.
+ * --dock-offset lifts an element above the nav.
  */
 .dock-bottom {
   position: fixed;
@@ -172,27 +168,10 @@ body {
   padding-left: var(--safe-left);
 }
 
-body::after {
-  position: fixed;
-  z-index: -1;
-  inset: -140px;
-  pointer-events: none;
-  content: "";
-  background-color: var(--bg);
-  background-image:
-    radial-gradient(130% 55% at 50% -12%, rgba(255, 91, 31, 0.1), transparent 62%),
-    repeating-linear-gradient(90deg, var(--bg) 0, var(--bg) 43px, var(--bg-2) 43px, var(--bg-2) 44px);
-  /* Keep the glow aligned to the real viewport while the stripes tile across
-     the whole bled box. */
-  background-repeat: no-repeat, repeat;
-  background-position: 140px 140px, 0 0;
-  background-size: calc(100% - 280px) calc(100% - 280px), auto;
-}
-
 body::before {
   position: fixed;
   z-index: 35;
-  inset: 0;
+  inset: 0 0 calc(-1 * var(--viewport-shortfall)) 0;
   pointer-events: none;
   content: "";
   opacity: 0.28;
