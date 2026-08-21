@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState, useSyncExternalStore } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { useSettings, saveSettings } from "@/lib/hooks";
 import { downloadBackup, importBackup, clearAll } from "@/lib/backup";
 import { ensureSeeded } from "@/lib/seed";
@@ -78,7 +78,9 @@ export default function SettingsPage() {
   };
 
   const reset = async () => {
-    if (!confirm("Erase ALL workouts, plans and records? This cannot be undone.")) {
+    if (
+      !confirm("Erase ALL workouts, plans and records? This cannot be undone.")
+    ) {
       return;
     }
     await clearAll();
@@ -237,6 +239,8 @@ export default function SettingsPage() {
         </div>
       </Section>
 
+      <ViewportReadout />
+
       <p className="num text-center text-[11px] uppercase tracking-[0.12em] text-text-faint">
         LIFT · offline-first · no account, no cloud
       </p>
@@ -295,5 +299,66 @@ function Toggle({
         />
       </span>
     </button>
+  );
+}
+
+/**
+ * TEMPORARY diagnostic: reports the real viewport geometry of the installed
+ * web app, which is not observable from a screenshot. Delete once the bottom
+ * strip is sorted.
+ */
+function ViewportReadout() {
+  const [lines, setLines] = useState<string[]>([]);
+
+  useEffect(() => {
+    // Measured after paint so the values reflect the settled viewport.
+    const id = requestAnimationFrame(() => {
+      const probe = document.createElement("div");
+      probe.style.cssText =
+        "position:fixed;left:0;top:0;width:0;height:0;" +
+        "padding:env(safe-area-inset-top) env(safe-area-inset-right) " +
+        "env(safe-area-inset-bottom) env(safe-area-inset-left);";
+      document.body.appendChild(probe);
+      const cs = getComputedStyle(probe);
+      const insets = [
+        cs.paddingTop,
+        cs.paddingRight,
+        cs.paddingBottom,
+        cs.paddingLeft,
+      ].join(" / ");
+      probe.remove();
+
+      const vv = window.visualViewport;
+      const standalone =
+        (window.navigator as Navigator & { standalone?: boolean })
+          .standalone === true;
+      setLines([
+        `inner ${window.innerWidth}x${window.innerHeight}`,
+        `screen ${window.screen.width}x${window.screen.height}`,
+        `visual ${vv ? `${Math.round(vv.width)}x${Math.round(vv.height)}` : "n/a"}`,
+        `doc ${document.documentElement.clientWidth}x${document.documentElement.clientHeight}`,
+        `dpr ${window.devicePixelRatio}`,
+        `safe t/r/b/l ${insets}`,
+        `standalone ${standalone} | dm ${
+          window.matchMedia("(display-mode: standalone)").matches
+        }`,
+        `shortfall var ${
+          getComputedStyle(document.documentElement).getPropertyValue(
+            "--viewport-shortfall",
+          ) || "(unset)"
+        }`,
+      ]);
+    });
+    return () => cancelAnimationFrame(id);
+  }, []);
+
+  if (lines.length === 0) return null;
+
+  return (
+    <div className="num rounded-[14px] border border-line bg-bg-2 p-3 text-[11px] leading-[1.6] text-text-dim">
+      {lines.map((line) => (
+        <div key={line}>{line}</div>
+      ))}
+    </div>
   );
 }
