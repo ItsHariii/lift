@@ -3,9 +3,15 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useLiveQuery } from "dexie-react-hooks";
-import { db, type Routine } from "@/lib/db";
+import { type Routine } from "@/lib/db";
 import { useExerciseMap } from "@/lib/hooks";
-import { createRoutine, updateRoutine, deleteRoutine } from "@/lib/routines";
+import {
+  listRoutines,
+  createRoutine,
+  updateRoutine,
+  deleteRoutine,
+  reorderRoutines,
+} from "@/lib/routines";
 import {
   startWorkout,
   getActiveWorkout,
@@ -15,16 +21,30 @@ import { confirmBuzz } from "@/lib/haptics";
 import PageHeader from "@/components/PageHeader";
 import Sheet from "@/components/Sheet";
 import ExercisePicker from "@/components/ExercisePicker";
+import DragList, { GripIcon } from "@/components/DragList";
 
 export default function RoutinesPage() {
   const router = useRouter();
-  const routines = useLiveQuery(
-    () => db.routines.orderBy("createdAt").reverse().toArray(),
-    [],
-    undefined,
-  );
+  const routines = useLiveQuery(() => listRoutines(), [], undefined);
   const exMap = useExerciseMap();
   const [editing, setEditing] = useState<Routine | "new" | null>(null);
+  // Holds the dropped order until the Dexie write lands, so the list never
+  // snaps back to the old positions mid-write.
+  const [pendingOrder, setPendingOrder] = useState<string[] | null>(null);
+
+  const byId = new Map((routines ?? []).map((routine) => [routine.id, routine]));
+  const ordered =
+    pendingOrder && pendingOrder.length === byId.size
+      ? pendingOrder
+          .map((id) => byId.get(id))
+          .filter((routine): routine is Routine => routine != null)
+      : (routines ?? []);
+
+  const reorder = async (ids: string[]) => {
+    setPendingOrder(ids);
+    await reorderRoutines(ids);
+    setPendingOrder(null);
+  };
 
   const start = async (routine: Routine) => {
     const active = await getActiveWorkout();
@@ -62,11 +82,21 @@ export default function RoutinesPage() {
           No plans yet. Build a routine once, launch it in one tap.
         </div>
       ) : (
-        <div className="flex flex-col gap-3">
-          {routines.map((routine) => (
+        <DragList
+          items={ordered.map((routine) => routine.id)}
+          onReorder={reorder}
+          className="flex flex-col gap-3"
+        >
+          {(id, handleProps, dragging) => {
+            const routine = byId.get(id);
+            if (!routine) return null;
+            return (
             <section
-              key={routine.id}
-              className="relative overflow-hidden rounded-[20px] border border-line bg-surface p-[18px]"
+              className={`relative overflow-hidden rounded-[20px] border bg-surface p-[18px] ${
+                dragging
+                  ? "border-accent shadow-[0_18px_40px_-16px_rgba(0,0,0,.9)]"
+                  : "border-line"
+              }`}
             >
               <div className="flex items-start justify-between">
                 <div className="min-w-0">
@@ -77,12 +107,22 @@ export default function RoutinesPage() {
                     {routine.exerciseIds.length} exercises
                   </div>
                 </div>
-                <button
-                  onClick={() => setEditing(routine)}
-                  className="label rounded-[11px] border border-line bg-transparent px-[11px] py-2 font-semibold tracking-[0.12em] text-text-dim active:border-accent active:text-accent"
-                >
-                  Edit
-                </button>
+                <div className="flex shrink-0 items-center gap-1.5">
+                  <button
+                    onClick={() => setEditing(routine)}
+                    className="label rounded-[11px] border border-line bg-transparent px-[11px] py-2 font-semibold tracking-[0.12em] text-text-dim active:border-accent active:text-accent"
+                  >
+                    Edit
+                  </button>
+                  <button
+                    {...handleProps}
+                    className={`rounded-[11px] border border-line bg-transparent p-2 ${
+                      dragging ? "text-accent" : "text-text-faint"
+                    }`}
+                  >
+                    <GripIcon className="h-[18px] w-[18px]" />
+                  </button>
+                </div>
               </div>
               <div className="mt-3 flex flex-wrap gap-1.5">
                 {routine.exerciseIds.slice(0, 6).map((id) => (
@@ -106,8 +146,9 @@ export default function RoutinesPage() {
                 START
               </button>
             </section>
-          ))}
-        </div>
+            );
+          }}
+        </DragList>
       )}
 
       {editing && (
@@ -184,13 +225,21 @@ function RoutineEditor({
         className="mb-3 w-full rounded-[14px] border border-line bg-bg-2 px-4 py-3.5 text-base text-text outline-none placeholder:text-text-faint focus:border-accent"
       />
 
-      <div className="flex flex-col gap-2">
-        {ids.map((id, index) => (
+      <DragList items={ids} onReorder={setIds} className="flex flex-col gap-2">
+        {(id, handleProps, dragging) => (
           <div
-            key={id}
-            className="flex items-center gap-3 rounded-[14px] border border-line bg-bg-2 px-3.5 py-[13px]"
+            className={`flex items-center gap-3 rounded-[14px] border bg-bg-2 px-3.5 py-[13px] ${
+              dragging ? "border-accent" : "border-line"
+            }`}
           >
-            <span className="num w-4 text-xs text-text-faint">{index + 1}</span>
+            <button
+              {...handleProps}
+              className={`-my-1 border-0 bg-transparent p-1 ${
+                dragging ? "text-accent" : "text-text-faint"
+              }`}
+            >
+              <GripIcon />
+            </button>
             <span className="flex-1 text-[15px] font-bold">
               {exMap?.get(id)?.name ?? "Exercise"}
             </span>
@@ -204,8 +253,8 @@ function RoutineEditor({
               </svg>
             </button>
           </div>
-        ))}
-      </div>
+        )}
+      </DragList>
 
       <button
         onClick={() => setPickerOpen(true)}

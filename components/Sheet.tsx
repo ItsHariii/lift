@@ -5,20 +5,28 @@ import { createPortal } from "react-dom";
 
 const SheetDepthContext = createContext(0);
 let bodyLockCount = 0;
-let previousBodyOverflow = "";
+let previousScrollOverflow = "";
+
+/** The app's single scroll pane (see .app-scroll in globals.css). */
+const scroller = () =>
+  typeof document === "undefined"
+    ? null
+    : document.getElementById("app-scroll");
 
 function lockBody() {
-  if (bodyLockCount === 0) {
-    previousBodyOverflow = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
+  const pane = scroller();
+  if (bodyLockCount === 0 && pane) {
+    previousScrollOverflow = pane.style.overflow;
+    pane.style.overflow = "hidden";
   }
   bodyLockCount += 1;
 }
 
 function unlockBody() {
   bodyLockCount = Math.max(0, bodyLockCount - 1);
-  if (bodyLockCount === 0) {
-    document.body.style.overflow = previousBodyOverflow;
+  const pane = scroller();
+  if (bodyLockCount === 0 && pane) {
+    pane.style.overflow = previousScrollOverflow;
   }
 }
 

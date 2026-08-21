@@ -185,7 +185,7 @@ export default function ExerciseBlock({
           label={`Weight · ${unit}`}
           value={weight}
           onChange={setWeight}
-          step={unitStep(unit)}
+          step={(current) => unitStep(unit, current)}
           decimals={1}
         />
         <Stepper label="Reps" value={reps} onChange={setReps} step={1} min={1} />

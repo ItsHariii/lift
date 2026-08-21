@@ -44,6 +44,8 @@ export interface Routine {
   name: string;
   exerciseIds: string[];
   createdAt: string;
+  /** Manual list position, ascending. Backfilled for pre-v3 rows. */
+  sortOrder?: number;
 }
 
 /** Denormalized best-weight-per-rep-count cache (drives PR detection). */
@@ -100,6 +102,21 @@ export class LiftDB extends Dexie {
     this.version(2).stores({
       bodyweight: "id, date",
     });
+    this.version(3)
+      .stores({
+        routines: "id, name, createdAt, sortOrder",
+      })
+      .upgrade(async (tx) => {
+        const table = tx.table<Routine, string>("routines");
+        const rows = await table.toArray();
+        // Freeze the order plans were already displayed in (newest first).
+        rows.sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+        await Promise.all(
+          rows.map((routine, index) =>
+            table.update(routine.id, { sortOrder: index }),
+          ),
+        );
+      });
   }
 }
 

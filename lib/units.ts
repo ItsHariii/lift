@@ -12,9 +12,14 @@ export function fromKg(kg: number, unit: Unit): number {
   return unit === "kg" ? kg : kg / KG_PER_LB;
 }
 
-/** Smallest sensible plate increment in the given unit. */
-export function step(unit: Unit): number {
-  return unit === "kg" ? 2.5 : 5;
+/**
+ * Smallest sensible plate increment for the given unit at the given load.
+ * Light lb loads move in 2.5 so small dumbbell/machine jumps are reachable;
+ * kg is a flat 2.5 everywhere.
+ */
+export function step(unit: Unit, value?: number): number {
+  if (unit === "kg") return 2.5;
+  return value != null && value < 50 ? 2.5 : 5;
 }
 
 /** Trim floating noise, keep at most 1 decimal. */

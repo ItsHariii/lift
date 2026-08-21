@@ -11,9 +11,12 @@ export interface PlateStack {
   leftover: number;
 }
 
-/** Default barbell weight in the display unit. */
-export function defaultBar(unit: Unit): number {
-  return unit === "kg" ? 20 : 45;
+/**
+ * Default barbell weight in the display unit. Starts empty so the calculator
+ * shows the whole target as plates until you dial a bar in.
+ */
+export function defaultBar(): number {
+  return 0;
 }
 
 /**

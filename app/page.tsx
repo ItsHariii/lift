@@ -12,6 +12,7 @@ import {
   finishWorkout,
   discardWorkout,
 } from "@/lib/workout";
+import { listRoutines } from "@/lib/routines";
 import {
   captureLocation,
   distanceM,
@@ -98,11 +99,7 @@ export default function LogPage() {
   const settings = useSettings();
   const exMap = useExerciseMap();
   const active = useLiveQuery(() => getActiveWorkout(), [], undefined);
-  const routines = useLiveQuery(
-    () => db.routines.orderBy("createdAt").reverse().toArray(),
-    [],
-    undefined,
-  );
+  const routines = useLiveQuery(() => listRoutines(), [], undefined);
   const elapsed = useElapsed(active?.startedAt);
   useAutoEnd(active, settings.autoEndOnLeave ?? false);
   const [pickerOpen, setPickerOpen] = useState(false);

@@ -53,11 +53,13 @@ export default function RootLayout({
       lang="en"
       className={`${anton.variable} ${archivo.variable} ${mono.variable} h-full`}
     >
-      <body className="min-h-full">
+      <body className="h-full overflow-hidden">
         <Boot />
-        <main className="app-shell relative z-[1] mx-auto w-full max-w-[440px] no-scrollbar">
-          {children}
-        </main>
+        <div id="app-scroll" className="app-scroll no-scrollbar">
+          <main className="app-shell relative z-[1] mx-auto w-full max-w-[440px]">
+            {children}
+          </main>
+        </div>
         <BottomNav />
       </body>
     </html>

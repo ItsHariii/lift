@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { computePlates, defaultBar } from "@/lib/plates";
 import { clean, step as unitStep, type Unit } from "@/lib/units";
 import Sheet from "./Sheet";
@@ -18,10 +18,8 @@ export default function PlateCalculator({
   weight: number;
   unit: Unit;
 }) {
-  const [bar, setBar] = useState(() => defaultBar(unit));
-
-  // reset the bar to the unit default whenever the unit changes
-  useEffect(() => setBar(defaultBar(unit)), [unit]);
+  // Starts empty: the whole target reads as plates until a bar is dialled in.
+  const [bar, setBar] = useState(() => defaultBar());
 
   const { plates, leftover } = computePlates(weight, bar, unit);
   const perSide = clean(Math.max(0, (weight - bar) / 2));
@@ -42,7 +40,7 @@ export default function PlateCalculator({
             label={`Bar · ${unit}`}
             value={bar}
             onChange={setBar}
-            step={unitStep(unit)}
+            step={(current) => unitStep(unit, current)}
             min={0}
             decimals={1}
           />
