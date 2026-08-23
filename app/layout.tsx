@@ -42,7 +42,12 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#13110c",
+  /*
+   * iOS paints the status bar strip itself in standalone, so this needs to
+   * match the *top* of the page rather than --bg: the radial glow warms the
+   * first ~60px to roughly this value. Using --bg leaves a visible flat band.
+   */
+  themeColor: "#1d160e",
   width: "device-width",
   initialScale: 1,
   maximumScale: 1,

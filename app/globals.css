@@ -8,6 +8,13 @@
   --app-gutter: clamp(14px, 4.2vw, 18px);
   --app-top-space: clamp(18px, 2.4vh, 22px);
   --bg: #13110c;
+  /*
+   * iOS fills the reserved status bar strip in a standalone web app with the
+   * document background colour, so it must match the *top of the page* (which
+   * the radial glow warms) rather than --bg, or a flat band appears under the
+   * Dynamic Island. Invisible elsewhere: .app-scroll paints over the viewport.
+   */
+  --status-strip: #1d160e;
   --bg-2: #0d0b07;
   --surface: #1c1811;
   --surface-2: #262019;
@@ -60,9 +67,8 @@ html {
   overscroll-behavior: none;
   -webkit-text-size-adjust: 100%;
   text-size-adjust: 100%;
-  /* Base colour only. WebKit paints a propagated canvas background over the
-     viewport rect alone, so the pattern lives on .app-scroll instead. */
-  background-color: var(--bg);
+  /* Only ever visible in the iOS status bar strip; see --status-strip. */
+  background-color: var(--status-strip);
 }
 
 body {
