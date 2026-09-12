@@ -6,11 +6,14 @@ import {
   Bar,
   BarChart,
   CartesianGrid,
+  Cell,
   ResponsiveContainer,
   Tooltip,
   XAxis,
   YAxis,
 } from "recharts";
+
+const GOLD = "#f2b53c";
 
 const axis = {
   stroke: "#8a7d68",
@@ -56,6 +59,7 @@ export function WeightChart({
   gradientId = "wfill",
   decimals = 0,
   domain,
+  prFlags,
 }: {
   data: { label: string; value: number }[];
   unit: string;
@@ -63,7 +67,30 @@ export function WeightChart({
   gradientId?: string;
   decimals?: number;
   domain?: [number | string, number | string];
+  /** per-point: session that set a new best, drawn gold and larger */
+  prFlags?: boolean[];
 }) {
+  const dot = ({
+    cx,
+    cy,
+    index,
+  }: {
+    cx?: number;
+    cy?: number;
+    index?: number;
+  }) => {
+    const isPR = prFlags?.[index ?? -1] ?? false;
+    return (
+      <circle
+        key={index}
+        cx={cx}
+        cy={cy}
+        r={isPR ? 3.6 : 2.5}
+        fill={isPR ? GOLD : color}
+      />
+    );
+  };
+
   return (
     <ResponsiveContainer width="100%" height={180}>
       <AreaChart data={data} margin={{ top: 8, right: 6, left: -18, bottom: 0 }}>
@@ -86,8 +113,8 @@ export function WeightChart({
           stroke={color}
           strokeWidth={2.5}
           fill={`url(#${gradientId})`}
-          dot={{ r: 2.5, fill: color, strokeWidth: 0 }}
-          activeDot={{ r: 4, fill: color }}
+          dot={prFlags ? dot : { r: 2.5, fill: color, strokeWidth: 0 }}
+          activeDot={{ r: 4.5, fill: color, stroke: "#1c1811", strokeWidth: 2 }}
         />
       </AreaChart>
     </ResponsiveContainer>
@@ -181,9 +208,12 @@ export function MuscleVolumeChart({
 export function VolumeChart({
   data,
   unit,
+  prFlags,
 }: {
   data: { label: string; value: number }[];
   unit: string;
+  /** per-bar: session that set a new best, painted gold */
+  prFlags?: boolean[];
 }) {
   return (
     <ResponsiveContainer width="100%" height={150}>
@@ -199,7 +229,11 @@ export function VolumeChart({
           content={<TipBox unit={unit} suffix={`${unit} vol`} />}
           cursor={{ fill: "rgba(255,91,31,0.08)" }}
         />
-        <Bar dataKey="value" fill="#c9451a" radius={[3, 3, 0, 0]} />
+        <Bar dataKey="value" fill="#c9451a" radius={[3, 3, 0, 0]}>
+          {prFlags?.map((isPR, index) => (
+            <Cell key={index} fill={isPR ? GOLD : "#c9451a"} />
+          ))}
+        </Bar>
       </BarChart>
     </ResponsiveContainer>
   );
