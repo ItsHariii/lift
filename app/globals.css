@@ -311,6 +311,112 @@ button {
   55%, 100% { background-position: -120% 0; }
 }
 
+/*
+ * Plate loader. Discs are sized by real disc diameter (--ratio) and real
+ * thickness so the bar on screen reads like the bar in front of you; the
+ * sleeves drop by --flex px as the load climbs, which is the bar bending.
+ */
+.bar-rail {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: max-content;
+  min-width: 100%;
+  justify-content: center;
+  padding: 22px 0;
+}
+
+.bar-shaft {
+  position: absolute;
+  top: 50%;
+  right: 0;
+  left: 0;
+  height: 11px;
+  margin-top: -5.5px;
+  border-radius: 3px;
+  background: linear-gradient(180deg, #918a7a, #5b5442 52%, #302a20 100%);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.22);
+}
+
+.bar-side {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  transform: translateY(calc(var(--flex, 0) * 1px));
+  transition: transform 0.28s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.bar-knurl {
+  position: relative;
+  height: 13px;
+  width: clamp(56px, 18vw, 84px);
+  flex-shrink: 0;
+  border-radius: 3px;
+  background:
+    repeating-linear-gradient(90deg, rgba(0, 0, 0, 0.42) 0 1px, transparent 1px 3px),
+    linear-gradient(180deg, #9b9484, #5f5847 52%, #332d22 100%);
+}
+
+.bar-collar {
+  height: 26px;
+  width: 9px;
+  flex-shrink: 0;
+  border-radius: 2px;
+  background: linear-gradient(180deg, #b3ab98, #6a6250 55%, #3a3327);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.28);
+}
+
+.plate-face {
+  position: relative;
+  flex-shrink: 0;
+  border: 0;
+  border-radius: 3px;
+  padding: 0;
+  height: calc(var(--disc) * var(--ratio));
+  width: calc(var(--thick) * 1px);
+  background:
+    linear-gradient(102deg, rgba(255, 255, 255, 0.3), rgba(0, 0, 0, 0.4) 66%),
+    var(--plate);
+  box-shadow:
+    inset 0 0 0 1px rgba(0, 0, 0, 0.5),
+    inset 0 1px 0 rgba(255, 255, 255, 0.26),
+    0 8px 16px -10px rgba(0, 0, 0, 0.95);
+}
+
+/* A 10px chrome plate is a real target, not a hairline. */
+.plate-hit::after {
+  position: absolute;
+  inset: -14px -5px;
+  content: "";
+}
+
+.plate-num {
+  writing-mode: vertical-rl;
+  text-orientation: mixed;
+  letter-spacing: 0.04em;
+  line-height: 1;
+}
+
+.animate-plate-on {
+  animation: plateOn 0.34s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes plateOn {
+  0% {
+    transform: translateX(calc(var(--dir, 1) * 30px)) scaleY(0.82);
+    opacity: 0;
+  }
+  62% {
+    transform: translateX(calc(var(--dir, 1) * -3px)) scaleY(1.03);
+    opacity: 1;
+  }
+  100% {
+    transform: translateX(0) scaleY(1);
+    opacity: 1;
+  }
+}
+
 @keyframes drawline {
   from { stroke-dashoffset: 900; }
   to { stroke-dashoffset: 0; }

@@ -13,8 +13,11 @@ import {
   type Unit,
 } from "@/lib/units";
 import { confirmBuzz, celebrate } from "@/lib/haptics";
+import { barForUnit, computePlates } from "@/lib/plates";
+import { useSettings } from "@/lib/hooks";
+import { DEFAULT_BAR_KG } from "@/lib/db";
 import Stepper from "./Stepper";
-import PlateCalculator from "./PlateCalculator";
+import PlateLoader from "./PlateLoader";
 import type { PRInfo } from "./PRToast";
 
 export default function ExerciseBlock({
@@ -60,6 +63,8 @@ export default function ExerciseBlock({
   );
   const [reps, setReps] = useState(defaultReps ?? 8);
   const [platesOpen, setPlatesOpen] = useState(false);
+  const settings = useSettings();
+  const bar = barForUnit(settings.barKg ?? DEFAULT_BAR_KG, unit);
   const lastSession = useLiveQuery(
     () => lastSessionFor(exerciseId, workoutId),
     [exerciseId, workoutId],
@@ -75,6 +80,15 @@ export default function ExerciseBlock({
       setReps(last.reps);
     });
   }, [exerciseId, unit]);
+
+  // The plates button doubles as a readout: what this weight looks like loaded.
+  const { plates } = computePlates(weight, bar, unit);
+  const platesLabel =
+    plates.length > 0
+      ? `${bar > 0 ? `${bar} bar · ` : ""}${plates
+          .map(({ plate, count }) => (count > 1 ? `${plate}×${count}` : plate))
+          .join(" · ")} / side`
+      : "Plates";
 
   const doLog = async () => {
     const weightKg = toKg(weight, unit);
@@ -195,14 +209,15 @@ export default function ExerciseBlock({
         onClick={() => setPlatesOpen(true)}
         className="label mx-4 mt-2.5 flex w-[calc(100%-2rem)] items-center justify-center gap-1.5 rounded-[12px] border border-line bg-bg-2 py-2 tracking-[0.16em] text-text-dim active:border-accent active:text-accent"
       >
-        ◔ Plates
+        ◔ {platesLabel}
       </button>
 
-      <PlateCalculator
+      <PlateLoader
         open={platesOpen}
         onClose={() => setPlatesOpen(false)}
         weight={weight}
         unit={unit}
+        onApply={setWeight}
       />
 
       <button

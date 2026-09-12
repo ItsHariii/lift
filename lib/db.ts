@@ -70,6 +70,8 @@ export interface Settings {
   nudgesEnabled?: boolean;
   /** auto-finish a workout when you leave the location it started at */
   autoEndOnLeave?: boolean;
+  /** barbell the plate loader starts from, canonical kilograms (0 = no bar) */
+  barKg?: number;
 }
 
 export interface BodyweightEntry {
@@ -117,6 +119,17 @@ export class LiftDB extends Dexie {
           ),
         );
       });
+    // No index change -- the upgrade exists only to backfill the bar weight so
+    // the plate loader opens on a real barbell instead of a bare sleeve.
+    this.version(4)
+      .stores({ settings: "id" })
+      .upgrade(async (tx) => {
+        const table = tx.table<Settings, string>("settings");
+        const existing = await table.get("app");
+        if (existing && existing.barKg == null) {
+          await table.update("app", { barKg: DEFAULT_BAR_KG });
+        }
+      });
   }
 }
 
@@ -127,11 +140,15 @@ export const uid = () =>
     ? crypto.randomUUID()
     : Math.random().toString(36).slice(2) + Date.now().toString(36);
 
+/** A men's Olympic bar, the overwhelmingly common case in both units. */
+export const DEFAULT_BAR_KG = 20;
+
 export const DEFAULT_SETTINGS: Settings = {
   id: "app",
   unit: "kg",
   restSeconds: 120,
   autoRest: true,
+  barKg: DEFAULT_BAR_KG,
 };
 
 export async function getSettings(): Promise<Settings> {

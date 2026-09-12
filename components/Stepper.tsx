@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useRef, useState } from "react";
 import { tick } from "@/lib/haptics";
 
 /** Fixed increment, or one derived from the value being stepped away from. */
@@ -20,6 +21,9 @@ export default function Stepper({
   min?: number;
   decimals?: number;
 }) {
+  const [draft, setDraft] = useState<string | null>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+
   const set = (next: number) => {
     onChange(Math.max(min, Math.round(next * 100) / 100));
     tick();
@@ -34,6 +38,17 @@ export default function Stepper({
   const display = Number.isInteger(value)
     ? String(value)
     : value.toFixed(decimals || 1);
+
+  useEffect(() => {
+    if (draft !== null) inputRef.current?.select();
+  }, [draft]);
+
+  // Blank or unparseable input keeps the value it had before the edit.
+  const commit = () => {
+    const parsed = Number.parseFloat(draft ?? "");
+    if (Number.isFinite(parsed)) set(parsed);
+    setDraft(null);
+  };
 
   return (
     <div className="flex-1">
@@ -50,9 +65,31 @@ export default function Stepper({
           −
         </button>
         <div className="flex flex-1 items-center justify-center border-x border-line py-[9px]">
-          <span className="display text-[clamp(28px,7.5vw,32px)] leading-none tracking-[0.02em] tabular-nums">
-            {display}
-          </span>
+          {draft === null ? (
+            <button
+              type="button"
+              aria-label={`edit ${label}`}
+              onClick={() => setDraft(display)}
+              className="display w-full border-0 bg-transparent text-center text-[clamp(28px,7.5vw,32px)] leading-none tracking-[0.02em] tabular-nums"
+            >
+              {display}
+            </button>
+          ) : (
+            <input
+              ref={inputRef}
+              type="text"
+              inputMode="decimal"
+              aria-label={label}
+              value={draft}
+              onChange={(event) => setDraft(event.target.value)}
+              onBlur={commit}
+              onKeyDown={(event) => {
+                if (event.key === "Enter") event.currentTarget.blur();
+                if (event.key === "Escape") setDraft(null);
+              }}
+              className="display w-full border-0 bg-transparent text-center text-[clamp(28px,7.5vw,32px)] leading-none tracking-[0.02em] tabular-nums text-accent outline-none"
+            />
+          )}
         </div>
         <button
           type="button"

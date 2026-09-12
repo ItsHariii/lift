@@ -7,6 +7,9 @@ import { ensureSeeded } from "@/lib/seed";
 import { confirmBuzz } from "@/lib/haptics";
 import { subscribeToNudges, notificationPermission } from "@/lib/push";
 import PageHeader from "@/components/PageHeader";
+import { barForUnit, barOptions } from "@/lib/plates";
+import { toKg } from "@/lib/units";
+import { DEFAULT_BAR_KG } from "@/lib/db";
 
 const REST_OPTIONS = [60, 90, 120, 180, 240];
 
@@ -134,6 +137,31 @@ export default function SettingsPage() {
           on={settings.autoRest}
           onToggle={() => saveSettings({ autoRest: !settings.autoRest })}
         />
+      </Section>
+
+      <Section label="Barbell">
+        <div className="flex gap-2">
+          {barOptions(settings.unit).map((option) => (
+            <button
+              key={option}
+              onClick={() => {
+                saveSettings({ barKg: toKg(option, settings.unit) });
+                confirmBuzz();
+              }}
+              className={`num flex-1 rounded-xl border py-2.5 text-sm font-semibold ${
+                barForUnit(settings.barKg ?? DEFAULT_BAR_KG, settings.unit) ===
+                option
+                  ? "border-accent bg-accent text-[#1a1206]"
+                  : "border-line bg-transparent text-text-dim"
+              }`}
+            >
+              {option === 0 ? "none" : option}
+            </button>
+          ))}
+        </div>
+        <p className="mt-2 text-[11px] leading-snug text-text-faint">
+          What the plate loader starts from, in {settings.unit}.
+        </p>
       </Section>
 
       <Section label="Auto-end · leave the gym">
