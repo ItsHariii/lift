@@ -39,9 +39,12 @@ export default function Stepper({
     ? String(value)
     : value.toFixed(decimals || 1);
 
+  // Select the text once when editing opens, not on every keystroke — reselecting
+  // after each change would make the next digit replace what was just typed.
+  const editing = draft !== null;
   useEffect(() => {
-    if (draft !== null) inputRef.current?.select();
-  }, [draft]);
+    if (editing) inputRef.current?.select();
+  }, [editing]);
 
   // Blank or unparseable input keeps the value it had before the edit.
   const commit = () => {
