@@ -9,6 +9,8 @@ export interface Exercise {
   /** Personal starting values used until the exercise has a logged set. */
   defaultWeightKg?: number;
   defaultReps?: number;
+  /** bar last picked in the plate loader, canonical kilograms (0 = no bar) */
+  barKg?: number;
 }
 
 export interface Workout {
@@ -70,7 +72,10 @@ export interface Settings {
   nudgesEnabled?: boolean;
   /** auto-finish a workout when you leave the location it started at */
   autoEndOnLeave?: boolean;
-  /** barbell the plate loader starts from, canonical kilograms (0 = no bar) */
+  /**
+   * barbell the plate loader starts from for exercises that haven't picked
+   * their own, canonical kilograms (0 = no bar)
+   */
   barKg?: number;
 }
 
