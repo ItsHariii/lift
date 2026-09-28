@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useLiveQuery } from "dexie-react-hooks";
-import { db } from "@/lib/db";
+import { db, getSettings } from "@/lib/db";
 import { logSet, deleteSet, lastSetFor, lastSessionFor } from "@/lib/pr";
 import {
   fromKg,
@@ -74,12 +74,23 @@ export default function ExerciseBlock({
   useEffect(() => {
     if (primed.current) return;
     primed.current = true;
-    lastSetFor(exerciseId).then((last) => {
-      if (!last) return;
-      setWeight(clean(fromKg(last.weightKg, unit)));
-      setReps(last.reps);
-    });
-  }, [exerciseId, unit]);
+    // The `unit` prop is the settings default ("kg") until the settings row
+    // loads, and this only runs once, so read the real unit from the db.
+    // Otherwise a lb user can get their last weight converted to kg and shown
+    // as pounds (225 lb -> "102.1").
+    Promise.all([lastSetFor(exerciseId), getSettings()]).then(
+      ([last, { unit: savedUnit }]) => {
+        if (last) {
+          setWeight(clean(fromKg(last.weightKg, savedUnit)));
+          setReps(last.reps);
+        } else if (defaultWeightKg != null) {
+          setWeight(clean(fromKg(defaultWeightKg, savedUnit)));
+        } else {
+          setWeight(savedUnit === "kg" ? 20 : 45);
+        }
+      },
+    );
+  }, [exerciseId, defaultWeightKg]);
 
   // The plates button doubles as a readout: what this weight looks like loaded.
   const { plates } = computePlates(weight, bar, unit);
