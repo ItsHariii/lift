@@ -1,9 +1,7 @@
 "use client";
 
 import { useState, type CSSProperties } from "react";
-import { useSettings, saveSettings } from "@/lib/hooks";
 import {
-  barForUnit,
   barOptions,
   countsOf,
   describeLoad,
@@ -15,8 +13,7 @@ import {
   stackTotal,
   type PlateSpec,
 } from "@/lib/plates";
-import { clean, toKg, type Unit } from "@/lib/units";
-import { DEFAULT_BAR_KG } from "@/lib/db";
+import { clean, type Unit } from "@/lib/units";
 import { tick, confirmBuzz } from "@/lib/haptics";
 import Sheet from "./Sheet";
 
@@ -30,6 +27,10 @@ interface LoaderProps {
   /** current weight in the display unit, used to seed the bar */
   weight: number;
   unit: Unit;
+  /** bar in the display unit, 0 = no bar */
+  bar: number;
+  /** remember a bar picked in the loader, in the display unit */
+  onPickBar: (bar: number) => void;
   /** commit the loaded total back to the weight field */
   onApply: (total: number) => void;
 }
@@ -38,9 +39,14 @@ interface LoaderProps {
  * Remounted on every open (see PlateLoader below) so the bar always seeds from
  * whatever the weight field says right now.
  */
-function Loader({ onClose, weight, unit, onApply }: Omit<LoaderProps, "open">) {
-  const settings = useSettings();
-  const bar = barForUnit(settings.barKg ?? DEFAULT_BAR_KG, unit);
+function Loader({
+  onClose,
+  weight,
+  unit,
+  bar,
+  onPickBar,
+  onApply,
+}: Omit<LoaderProps, "open">) {
   const specs = specsFor(unit);
 
   const [perSide, setPerSide] = useState(() =>
@@ -75,7 +81,7 @@ function Loader({ onClose, weight, unit, onApply }: Omit<LoaderProps, "open">) {
   };
 
   const pickBar = (next: number) => {
-    saveSettings({ barKg: toKg(next, unit) });
+    onPickBar(next);
     tick();
   };
 

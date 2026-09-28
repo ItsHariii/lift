@@ -64,7 +64,13 @@ export default function ExerciseBlock({
   const [reps, setReps] = useState(defaultReps ?? 8);
   const [platesOpen, setPlatesOpen] = useState(false);
   const settings = useSettings();
-  const bar = barForUnit(settings.barKg ?? DEFAULT_BAR_KG, unit);
+  const exercise = useLiveQuery(() => db.exercises.get(exerciseId), [exerciseId]);
+  // The bar is remembered per exercise (a dumbbell lift has none); the
+  // settings bar is only the starting point for exercises that never picked.
+  const bar = barForUnit(
+    exercise?.barKg ?? settings.barKg ?? DEFAULT_BAR_KG,
+    unit,
+  );
   const lastSession = useLiveQuery(
     () => lastSessionFor(exerciseId, workoutId),
     [exerciseId, workoutId],
@@ -228,6 +234,10 @@ export default function ExerciseBlock({
         onClose={() => setPlatesOpen(false)}
         weight={weight}
         unit={unit}
+        bar={bar}
+        onPickBar={(next) =>
+          db.exercises.update(exerciseId, { barKg: toKg(next, unit) })
+        }
         onApply={setWeight}
       />
 
